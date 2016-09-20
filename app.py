@@ -8,7 +8,7 @@ import MySQLdb
 
 HOST = '176.58.96.74'
 USERNAME = 'comp4920'
-PASSWORD = 'q3H286cJ5EXyGqRwcookies'
+PASSWORD = 'q3H286cJ5EXyGqRw'
 
 
 # create and initialise app
