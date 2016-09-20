@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 # imports
 from flask import Flask, request, session, redirect, \
-    url_for, abort, render_template, flash
-
+    url_for, abort, render_template, flash, jsonify
+# import json  # possibly put back in if needed
 from flask_mysqldb import MySQL
 import MySQLdb
+import collections
 
 # configuration of db
 
@@ -22,11 +23,12 @@ app.config.from_object(__name__)
 # View to show entries on Flaskr
 @app.route("/")
 def index():
-    """Searches the database for entries, then displays them."""
-    cur = connect_db()
-    cur.execute('SELECT * FROM Book_List;')
-    entries = cur.fetchall()
-    return str(entries)  # check what comes back
+    # """Searches the database for entries, then displays them."""
+    # cur = connect_db()
+    # cur.execute('SELECT * FROM Book_List;')
+    # entries = cur.fetchall()
+    # return str(entries)  # check what comes back
+    return get_user_table  # check what comes back
     # return render_template('index.html', entries=entries)
 # Connect to database
 
@@ -68,6 +70,29 @@ def add_entry():
         return redirect(url_for('index'))
     except MySQLdb.DatabaseError as e:
         print("ERROR %d IN ADDING: %s" % (e.args[0], e.args[1]))
+
+
+# Returns user table as a JSON object - change for other tables?
+def get_user_table():
+    cur = connect_db()
+    cur.execute('''SELECT * FROM User''')
+    rv = cur.fetchall()
+
+    # http://codehandbook.org/working-with-json-in-python-flask/
+    userList = []
+    for user in rv:
+        # http://stackoverflow.com/questions/15711755/converting-dict-to-ordereddict
+        userDict = (
+            ('User ID', user[0]),
+            ('Email', user[1]),
+            ('Password', user[2]),
+            ('University', user[3]),
+            ('Location', user[4])
+        )
+        userList.append(collections.OrderedDict(userDict))
+
+    # return json.dumps(userList)
+    return jsonify(userList)  # Pretty printing
 
 
 def connect_db():
