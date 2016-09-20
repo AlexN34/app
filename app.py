@@ -12,7 +12,7 @@ import MySQLdb
 # create and initialise app
 app = Flask(__name__)
 app.config['MYSQL_HOST'] = '176.58.96.74'
-app.config['MYSQL_USERNAME'] = 'comp4920'
+app.config['MYSQL_USER'] = 'comp4920'
 app.config['MYSQL_PASSWORD'] = 'q3H286cJ5EXyGqRw'
 app.config['MYSQL_DB'] = 'bookswapp'
 mysql = MySQL(app)  # attaches mysql object to the app?
