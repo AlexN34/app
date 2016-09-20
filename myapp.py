@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
-from flask import Flask
+from flask import Flask, json, jsonify
 from flask_mysqldb import MySQL
+import collections
 
 app = Flask(__name__)
 #app.config.from_object(__name__)
@@ -13,11 +14,30 @@ mysql = MySQL(app)
 
 @app.route("/")
 def index():
+    return get_user_table()
+
+# Returns user table as a JSON object - change for other tables?
+def get_user_table():
     cur = mysql.connection.cursor()
-    #cur.execute('''SELECT user, host FROM mysql.user''')
     cur.execute('''SELECT * FROM User''')
     rv = cur.fetchall()
-    return str(rv)
+
+    # http://codehandbook.org/working-with-json-in-python-flask/
+    userList = []
+    for user in rv:
+        # http://stackoverflow.com/questions/15711755/converting-dict-to-ordereddict
+        userDict = (
+            ('User ID', user[0]),
+            ('Email', user[1]),
+            ('Password' , user[2]),
+            ('University', user[3]),
+            ('Location', user[4])
+        )
+        userList.append(collections.OrderedDict(userDict))
+
+    #return json.dumps(userList)
+    return jsonify(userList) # Pretty printing
+
 
 if __name__ == "__main__":
     app.run()
