@@ -19,9 +19,10 @@ class BasicTestCase(unittest.TestCase):
 
     def test_database(self):
         dbName = 'bookswapp'
-        conn = MySQLdb.Connect(self.server, self.user, self.password)
-        cursor = conn.cursor()
-        cursor.execute("USE %s" % (dbName))
+        conn = app.mysql.connection()
+        self.assertTrue(conn)
+        cur = conn.cursor()
+        cur.execute("USE %s" % (dbName))
 
         """
         Database should contain a User, Book, Book_List, University
@@ -34,8 +35,8 @@ class BasicTestCase(unittest.TestCase):
         reqTables = ["User", "Book", "Book_List", "University"]
         try:
             for table in reqTables:
-                cursor.execute("SELECT 1 FROM %s;" % (table))
-                result = cursor.fetchone()
+                cur.execute("SELECT 1 FROM %s;" % (table))
+                result = cur.fetchone()
 
                 # self.assertTrue(result, "Empty result from call, \
                 # table: %s" % (table))
