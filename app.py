@@ -2,6 +2,8 @@
 # imports
 from flask import Flask, request, session, redirect, \
 	url_for, abort, render_template, flash, jsonify
+from flask.ext.api import status
+
 # import json  # possibly put back in if needed
 from flask_mysqldb import MySQL
 import MySQLdb
@@ -28,7 +30,7 @@ def index():
 	# cur.execute('SELECT * FROM Book_List;')
 	# entries = cur.fetchall()
 	# return str(entries)  # check what comes back
-	return get_user_table()  # check what comes back
+	return get_user_table(),status.HTTP_200_OK  # check what comes back
 	# return render_template('index.html', entries=entries)
 # Connect to database
 
@@ -45,13 +47,13 @@ def register():
 
 		#If the email already exits, throw an error code 
 		if int(i) > 0:
-			return "Sorry, user already exists\n"
+			return status.HTTP_400_BAD_REQUEST
 		#Create the user return success status
 		else:
 			q = "INSERT INTO User (email, password, university, location) VALUES ('{0}', '{1}', '{2}', '{3}')".format(email, password, university, location)
 			c.execute(q)
 			con.commit()
-			return "New user added!\n"
+			return status.HTTP_201_CREATED
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
