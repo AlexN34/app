@@ -22,15 +22,30 @@ mysql = MySQL(app)  # attaches mysql object to the app?
 app.config.from_object(__name__)
 
 
+def connection():
+    conn = MySQLdb.connect(host=app.config['MYSQL_HOST'],
+                           user = app.config['MYSQL_USER'],
+                           passwd = app.config['MYSQL_PASSWORD'],
+                           db = app.config['MYSQL_DB'])
+    c = conn.cursor()
+    return c, conn
+
+
+
 # View to show entries on Flaskr
 @app.route("/")
 def index():
-	# """Searches the database for entries, then displays them."""
-	# cur = connect_db()
-	# cur.execute('SELECT * FROM Book_List;')
-	# entries = cur.fetchall()
-	# return str(entries)  # check what comes back
-	return get_user_table(),status.HTTP_200_OK  # check what comes back
+	s = """Current API:<br><br>
+	/login - NOT WORKING<br>
+	/logout - NOT WORKING<br>
+	/api/user/register -> Adds a new user to the database<br>
+	/api/user/<userid> -> Retrieves user information<br>
+	/api/user/list -> Lists all the users<br>
+	/api/books/create -> Adds a new book to the database<br>
+	/api/books/<bookid> -> Retrieves book information<br>
+	/api/books/list -> Lists all the books<br>"""
+
+	return s,status.HTTP_200_OK  # check what comes back
 	# return render_template('index.html', entries=entries)
 # Connect to database
 
@@ -57,7 +72,7 @@ def logout():
 	flash('You were logged out')
 	return redirect(url_for('index'))
 
-@app.route('/api/register', methods=['GET', 'POST'])
+@app.route('/api/user/register', methods=['GET', 'POST'])
 def register():
 
 		email = request.form['email']
@@ -103,6 +118,31 @@ def get_user(userid):
 		return status.HTTP_404_NOT_FOUND
 
 
+@app.route('/api/user/list')
+def get_userlist():
+	c, con = connection()
+	c.execute('''SELECT * FROM User''')
+	rv = c.fetchall()
+
+	# http://codehandbook.org/working-with-json-in-python-flask/
+	userList = []
+	for user in rv:
+		# http://stackoverflow.com/questions/15711755/converting-dict-to-ordereddict
+		userDict = (
+			('User ID', user[0]),
+			('Email', user[1]),
+			('Password', user[2]),
+			('University', user[3]),
+			('Location', user[4])
+		)
+		userList.append(collections.OrderedDict(userDict))
+
+	# return json.dumps(userList)
+	c.close()
+	con.close()
+	return jsonify(userList),status.HTTP_200_OK  # Pretty printing
+
+
 @app.route('/api/books/create', methods=['POST'])
 def add_book():
 	#Name/Author/isbn/prescribed_course/pages*/edition/condition/transaction_type/price/description
@@ -142,55 +182,54 @@ def get_book(bookid):
 		c.close()
 		con.close()
 		return jsonify({
-			'Name': values[0][0],
-			'Author': values[0][1],
-			'ISBN': values[0][2],
-			'Prescribed Course': values[0][3],
-			'Condntion': values[0][4]
-			'Transaction Type': values[0][5],
-			'Price': values[0][6],
-			'Pages': values[0][7],
-			'Edition': values[0][8],
-			'Description': values[0][9],
-			'Margin': values[0][10],
+			'Book ID': values[0][0],
+			'Name': values[0][1],
+			'Author': values[0][2],
+			'ISBN': values[0][3],
+			'Prescribed Course': values[0][4],
+			'Condntion': values[0][5],
+			'Transaction Type': values[0][6],
+			'Price': values[0][7],
+			'Pages': values[0][8],
+			'Edition': values[0][9],
+			'Description': values[0][10],
+			'Margin': values[0][11],
 			}), status.HTTP_200_OK
 	else:
 		c.close()
 		con.close()
 		return status.HTTP_404_NOT_FOUND
 
-
-# Returns user table as a JSON object - change for other tables?
-def get_user_table():
+@app.route('/api/books/list')
+def get_booklist():
 	c, con = connection()
-	c.execute('''SELECT * FROM User''')
+	c.execute("SELECT * FROM Book")
 	rv = c.fetchall()
 
 	# http://codehandbook.org/working-with-json-in-python-flask/
-	userList = []
-	for user in rv:
+	bookList = []
+	for book in rv:
 		# http://stackoverflow.com/questions/15711755/converting-dict-to-ordereddict
-		userDict = (
-			('User ID', user[0]),
-			('Email', user[1]),
-			('Password', user[2]),
-			('University', user[3]),
-			('Location', user[4])
+		bookDict = (
+			('Book ID', book[0]),
+			('Name', book[1]),
+			('Author', book[2]),
+			('ISBN', book[3]),
+			('Prescribed Course', book[4]),
+			('Condntion', book[5]),
+			('Transaction Type', book[6]),
+			('Price', book[7]),
+			('Pages', book[8]),
+			('Edition', book[9]),
+			('Description', book[10]),
+			('Margin', book[11])
 		)
-		userList.append(collections.OrderedDict(userDict))
+		bookList.append(collections.OrderedDict(bookDict))
 
 	# return json.dumps(userList)
 	c.close()
 	con.close()
-	return jsonify(userList)  # Pretty printing
-
-def connection():
-    conn = MySQLdb.connect(host=app.config['MYSQL_HOST'],
-                           user = app.config['MYSQL_USER'],
-                           passwd = app.config['MYSQL_PASSWORD'],
-                           db = app.config['MYSQL_DB'])
-    c = conn.cursor()
-    return c, conn
+	return jsonify(bookList),status.HTTP_200_OK
 
 
 # @app.teardown_appcontext
