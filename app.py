@@ -37,6 +37,7 @@ def index():
 
 @app.route('/api/register', methods=['GET', 'POST'])
 def register():
+
 		email = request.form['email']
 		password = request.form['password']
 		university = request.form.get('university',None)
@@ -47,12 +48,16 @@ def register():
 
 		#If the email already exits, throw an error code 
 		if int(i) > 0:
+			c.close()
+			conn.close()
 			return status.HTTP_400_BAD_REQUEST
 		#Create the user return success status
 		else:
 			q = "INSERT INTO User (email, password, university, location) VALUES ('{0}', '{1}', '{2}', '{3}')".format(email, password, university, location)
 			c.execute(q)
 			con.commit()
+			c.close()
+			conn.close()
 			return status.HTTP_201_CREATED
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -79,19 +84,32 @@ def logout():
 	return redirect(url_for('index'))
 
 
-@app.route('/add', methods=['POST'])
-def add_entry():
-	""" Add new post to database. """
-	if not session._get('logged_in'):
-		abort(401)
-	try:
-		c, con = connection()
-		c.execute('INSERT INTO Book_List (user_id, book_id) values (0, 5);')
-		con.commit()
-		flash('New entry was successfully posted')
-		return redirect(url_for('index'))
-	except MySQLdb.DatabaseError as e:
-		print("ERROR %d IN ADDING: %s" % (e.args[0], e.args[1]))
+@app.route('/api/books/create', methods=['POST'])
+def add_book():
+	#Name/Author/isbn/prescribed_course/pages*/edition/condition/transaction_type/price/description
+
+	#Need to manage sessions here. Removed previous session handling because it's not implemented yet.
+	#MUST BE DEFINED
+	name = request.form['name']
+	author = request.form['author']
+	isbn = request.form['isbn']
+	prescribed_course = request.form['prescribed_course']
+	condition = request.form['condition']
+	transaction_type = request.form['transaction_type']
+	price = request.form['price']
+
+	#OPTION PARAMS
+	pages = request.form.get('pages',None)
+	edition = request.form.get('edition',None)
+	description = request.form.get('description',None)
+	margin = request.form.get('margin',None)
+	q = "INSERT INTO Book (name, author, isbn, prescribed_course, condition, transaction_type, price, pages, edition, description, margin) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}')".format(
+		name, author, isbn, prescribed_course, condition, transaction_type, price, pages, edition, description, margin)
+	c.execute(q)
+	con.commit()
+	c.close()
+	conn.close()
+	return status.HTTP_201_CREATED
 
 
 # Returns user table as a JSON object - change for other tables?
@@ -114,6 +132,8 @@ def get_user_table():
 		userList.append(collections.OrderedDict(userDict))
 
 	# return json.dumps(userList)
+	c.close()
+	conn.close()
 	return jsonify(userList)  # Pretty printing
 
 def connection():
