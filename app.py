@@ -28,7 +28,7 @@ def index():
     # cur.execute('SELECT * FROM Book_List;')
     # entries = cur.fetchall()
     # return str(entries)  # check what comes back
-    return get_user_table  # check what comes back
+    return get_user_table()  # check what comes back
     # return render_template('index.html', entries=entries)
 # Connect to database
 
@@ -75,7 +75,7 @@ def add_entry():
 # Returns user table as a JSON object - change for other tables?
 def get_user_table():
     cur = connect_db()
-    cur.execute('''SELECT * FROM User''')
+    cur.execute('''SELECT * FROM Book''')
     rv = cur.fetchall()
 
     # http://codehandbook.org/working-with-json-in-python-flask/
