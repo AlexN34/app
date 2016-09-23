@@ -33,7 +33,8 @@ def get_user_table():
             ('University', user[3]),
             ('Location', user[4])
         )
-        userList.append(collections.OrderedDict(userDict))
+        userDict = collections.OrderedDict(userDict)
+        userList.append(userDict)
 
     #return json.dumps(userList)
     return jsonify(userList) # Pretty printing

@@ -1,0 +1,81 @@
+<!doctype html>
+<html ng-app="bookSwapp">
+<head>
+  <title>BookSwapp</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway:500" rel="stylesheet" type="text/css">
+
+  <!-- dependencies: bootstrap, angular, fonts -->
+  <link rel="stylesheet" href="./css/bootstrap.min.css">
+  <script src="js/jquery.min.js"></script>
+  <script src="js/angular.min.js"></script>
+  <script src="js/angular-animate.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <!-- Angular UI for Bootstrap -->
+  <script src="js/ui-bootstrap.min.js"></script>
+
+  <!-- Our app stylesheet and source -->
+  <link rel="stylesheet" href="./css/app.css">
+  <script src="js/app.js"></script>
+</head>
+
+<body ng-controller="homeCtrl">
+
+  <!-- Top navbar -->
+  <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#"><span class="glyphicon glyphicon-book"></span> BookSwapp</a>
+      </div>
+      <div id="navbar" class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="#" ng-click="">Home</a></li>
+          <li><a href="#" ng-click="">About</a></li>
+          <li><a href="#" ng-click="">Register</a></li>
+          <li><a href="#" ng-click="">Login</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Rest of the page -->
+  <div class="container">
+
+    <!-- Breadcrumbs -->
+    <ol class="breadcrumb pull-right">
+      <li class="breadcrumb-item active">Selling</li>
+      <li class="breadcrumb-item"><a href="#">Wanted</a></li>
+      <li class="breadcrumb-item"><a href="#">Swap</a></li>
+    </ol>
+
+    <!-- Main table -->
+    <table class="table table-bordered table-hover">
+      <thead class="table-head">
+        <tr>
+          <td>#</td>
+          <td>Name</td>
+          <td>Price</td>
+          <td>Location</td>
+          <td>Type</td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="listing in listings">
+          <td>{{ listing.id }}</td>
+          <td>{{ listing.name }}</td>
+          <td>${{ listing.price | number : 2 }}</td>
+          <td>{{ listing.location }}</td>
+          <td>{{ listing.type }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+</body>
+
+</html>
