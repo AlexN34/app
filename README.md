@@ -1,6 +1,9 @@
 # Bookswapp
 Textbook trading marketplace web app for COMP4920
 
+# API details
+https://docs.google.com/document/d/1W6OSjiO2Ia2rvqzSiSrmi2W0Yf7MdHPWsrbcks579mw/mobilebasic
+
 ## Setup
 sudo apt-get install libmysqlclient-dev  
 sudo pip3 install virtualenv  
