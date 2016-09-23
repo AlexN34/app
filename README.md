@@ -13,3 +13,6 @@ source venv/bin/activate
 pip3 install -r requirements.txt  
 ...Work...  
 deactivate
+
+## Activate file
+Add 'FLASK_APP=app.py' and 'FLASK_DEBUG=1' to the bottom of the file

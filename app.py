@@ -9,6 +9,7 @@ from flask_api import status
 from flask_mysqldb import MySQL
 import collections
 import MySQLdb
+import os
 # configuration of db
 
 # create and initialise app
@@ -18,8 +19,10 @@ app.config['MYSQL_USER'] = 'comp4920'
 app.config['MYSQL_PASSWORD'] = 'q3H286cJ5EXyGqRw'
 app.config['MYSQL_DB'] = 'bookswapp'
 app.config.from_object(__name__)  # config from above variables in file
-mysql = MySQL(app)  # attaches mysql object to the app?
+#mysql = MySQL(app)  # attaches mysql object to the app?
 
+# set the secret key
+app.secret_key = os.urandom(24)
 
 def connection():
     # mysql object holds credentials, use it to connect to db
@@ -46,43 +49,90 @@ def index():
     /api/books/<bookid> -> Retrieves book information<br>
     /api/books/list -> Lists all the books<br>"""
 
+    login_form_html = """
+<html>
+   <body>
+      <form action="http://localhost:5000/login" method="POST">
+         <p>Email<input type="text" name="email"></p>
+         <p>Password<input type="password" name="password"></p>
+         <p><input type="submit"></p>
+      </form>
+   </body>
+</html>"""
+
+    if 'logged_in' in session:
+        msg = "<p>Logged in as %s</p>" % session['email']
+        s += msg
+    else:
+        s += "<p>Not logged in</p>"
+        s += login_form_html
+
     return s, status.HTTP_200_OK  # check what comes back
     # return render_template('index.html', entries=entries)
 # Connect to database
 
 
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     """ User login/authentication/session management. """
+#     error = None
+#     """ Connect to database to check if user details exist """
+#     if request.method == 'POST':  # request is imported module
+#         c, conn = connection()
+#         c.execute("SELECT * FROM User WHERE email = %s"
+#                   % (request.form['email']))
+#         rv = c.fetchall()
+#         # if rv[2] is password field, somehow unhash it on compare
+#         # or, sha(1) hash input form field
+#         # passTest = sha(rv[2])
+#         passTest = 1  # dummy value, see above
+#         if request.form['email'] != rv[1]:
+#             # Assume email is second rv field; if none exist this will fail
+#             # Assumes app config sets up credentials in this variable
+#             # replace condition with lookup in database
+#             error = "Invalid email"
+#         elif passTest != rv[2]:  #
+#             error = "Invalid password"
+#         else:
+#             session['logged_in'] = True
+#             flash('You were logged in')
+#             return redirect(url_for('index'))
+#         return render_template('login.html', error=error)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """ User login/authentication/session management. """
-    error = None
-    """ Connect to database to check if user details exist """
-    if request.method == 'POST':  # request is imported module
-        c, conn = connection()
-        c.execute("SELECT * FROM User WHERE email = %s"
-                  % (request.form['email']))
-        rv = c.fetchall()
-        # if rv[2] is password field, somehow unhash it on compare
-        # or, sha(1) hash input form field
-        # passTest = sha(rv[2])
-        passTest = 1  # dummy value, see above
-        if request.form['email'] != rv[1]:
-            # Assume email is second rv field; if none exist this will fail
-            # Assumes app config sets up credentials in this variable
-            # replace condition with lookup in database
-            error = "Invalid email"
-        elif passTest != rv[2]:  #
-            error = "Invalid password"
-        else:
-            session['logged_in'] = True
-            flash('You were logged in')
-            return redirect(url_for('index'))
-        return render_template('login.html', error=error)
+    error = "Invalid email/password"
 
+    # Should sanitate input and hash password
+    # ...
+
+    # Check that email and password fields are not empty
+    if request.method == 'POST' and request.form['email'] and request.form['password']:
+        query = ("SELECT * FROM User WHERE email = %s")
+        email = "%s" % request.form['email']
+
+        c, conn = connection()
+        c.execute(query, [email])
+        rv = c.fetchone()
+
+        if rv:
+            if request.form['password'] != rv[2]:
+                error = "Invalid password"
+            else:
+                session['email'] = request.form['email']
+                session['logged_in'] = True
+                return redirect(url_for('index'))
+        else:
+            error = "Invalid email"
+    
+    return render_template('login.html', error=error)
 
 @app.route('/logout')
 def logout():
     """ User logout/authentication/session management. """
-    session.pop('logged_in', None)
+    session.pop('email', None)
+    session.pop('logged_in', False)
     flash('You were logged out')
     return redirect(url_for('index'))
 
@@ -120,15 +170,15 @@ def get_user(userid):
     c, con = connection()
     i = c.execute("SELECT * FROM User WHERE user_id = '{0}'".format(userid))
     if int(i) > 0:
-        values = c.fetchall()
+        values = c.fetchone()
         c.close()
         con.close()
         return jsonify({
-            'User ID': values[0][0],
-            'Email': values[0][1],
-            'Password': values[0][2],
-            'University': values[0][3],
-            'Location': values[0][4]
+            'User ID': values[0],
+            'Email': values[1],
+            'Password': values[2],
+            'University': values[3],
+            'Location': values[4]
             }), status.HTTP_200_OK
     else:
         c.close()
@@ -145,14 +195,13 @@ def get_userlist():
     # http://codehandbook.org/working-with-json-in-python-flask/
     userList = []
     for user in rv:
-        # http://stackoverflow.com/questions/15711755/converting-dict-to-ordereddict
-        userDict = (
-            ('User ID', user[0]),
-            ('Email', user[1]),
-            ('Password', user[2]),
-            ('University', user[3]),
-            ('Location', user[4])
-        )
+        userDict = {
+            'User ID': user[0],
+            'Email': user[1],
+            'Password': user[2],
+            'University': user[3],
+            'Location': user[4]
+        }
         userList.append(collections.OrderedDict(userDict))
 
     # return json.dumps(userList)
@@ -169,6 +218,10 @@ def add_book():
     # Need to manage sessions here.
     # Removed previous session handling because it's not implemented yet.
     # MUST BE DEFINED
+
+    if not session['logged_in']:
+        return status.HTTP_400_BAD_REQUEST
+
     name = request.form['name']
     author = request.form['author']
     isbn = request.form['isbn']
@@ -204,22 +257,23 @@ def get_book(bookid):
     c, con = connection()
     i = c.execute("SELECT * FROM Book WHERE book_id = '{0}'".format(bookid))
     if int(i) > 0:
-        values = c.fetchall()
+        # values = c.fetchall()
+        values = c.fetchone()
         c.close()
         con.close()
         return jsonify({
-            'Book ID': values[0][0],
-            'Name': values[0][1],
-            'Author': values[0][2],
-            'ISBN': values[0][3],
-            'Prescribed Course': values[0][4],
-            'Condntion': values[0][5],
-            'Transaction Type': values[0][6],
-            'Price': values[0][7],
-            'Pages': values[0][8],
-            'Edition': values[0][9],
-            'Description': values[0][10],
-            'Margin': values[0][11],
+            'Book ID': values[0],
+            'Name': values[1],
+            'Author': values[2],
+            'ISBN': values[3],
+            'Prescribed Course': values[4],
+            'Condntion': values[5],
+            'Transaction Type': values[6],
+            'Price': values[7],
+            'Pages': values[8],
+            'Edition': values[9],
+            'Description': values[10],
+            'Margin': values[11],
             }), status.HTTP_200_OK
     else:
         c.close()
@@ -236,21 +290,20 @@ def get_booklist():
     # http://codehandbook.org/working-with-json-in-python-flask/
     bookList = []
     for book in rv:
-        # http://stackoverflow.com/questions/15711755/converting-dict-to-ordereddict
-        bookDict = (
-            ('Book ID', book[0]),
-            ('Name', book[1]),
-            ('Author', book[2]),
-            ('ISBN', book[3]),
-            ('Prescribed Course', book[4]),
-            ('Condntion', book[5]),
-            ('Transaction Type', book[6]),
-            ('Price', book[7]),
-            ('Pages', book[8]),
-            ('Edition', book[9]),
-            ('Description', book[10]),
-            ('Margin', book[11])
-        )
+        bookDict = {
+            'Book ID': book[0],
+            'Name': book[1],
+            'Author': book[2],
+            'ISBN': book[3],
+            'Prescribed Course': book[4],
+            'Condntion': book[5],
+            'Transaction Type': book[6],
+            'Price': book[7],
+            'Pages': book[8],
+            'Edition': book[9],
+            'Description': book[10],
+            'Margin': book[11]
+        }
         bookList.append(collections.OrderedDict(bookDict))
 
     # return json.dumps(userList)
