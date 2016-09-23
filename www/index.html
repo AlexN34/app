@@ -15,7 +15,8 @@
   <!-- Angular UI for Bootstrap -->
   <script src="js/ui-bootstrap.min.js"></script>
 
-  <!-- Our app source -->
+  <!-- Our app stylesheet and source -->
+  <link rel="stylesheet" href="./css/app.css">
   <script src="js/app.js"></script>
 </head>
 
@@ -41,7 +42,39 @@
     </div>
   </nav>
 
-  <!-- Rest of page -->
+  <!-- Rest of the page -->
+  <div class="container">
+
+    <!-- Breadcrumbs -->
+    <ol class="breadcrumb pull-right">
+      <li class="breadcrumb-item active">Selling</li>
+      <li class="breadcrumb-item"><a href="#">Wanted</a></li>
+      <li class="breadcrumb-item"><a href="#">Swap</a></li>
+    </ol>
+
+    <!-- Main table -->
+    <table class="table table-bordered table-hover">
+      <thead class="table-head">
+        <tr>
+          <td>#</td>
+          <td>Name</td>
+          <td>Price</td>
+          <td>Location</td>
+          <td>Type</td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="listing in listings">
+          <td>{{ listing.id }}</td>
+          <td>{{ listing.name }}</td>
+          <td>${{ listing.price | number : 2 }}</td>
+          <td>{{ listing.location }}</td>
+          <td>{{ listing.type }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
 
 </body>
 
