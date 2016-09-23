@@ -5,7 +5,7 @@ from flask import Flask, request, session, redirect, \
 # abort
 from flask_api import status
 
-# import json  # possibly put back in if needed
+import json  # possibly put back in if needed
 # from flask_mysqldb import MySQL
 import collections
 import MySQLdb
@@ -67,10 +67,12 @@ def index():
     else:
         s += "<p>Not logged in</p>"
         s += login_form_html
+    jsonList, status = get_userlist()
 
-    return s, status.HTTP_200_OK
+    # return s, status.HTTP_200_OK
     # check what comes back
-    # return render_template('index.html', entries=entries)
+    # return json.loads(json.dumps(jsonList))
+    return render_template('index.html', json=json.loads(json.dumps(jsonList)))
 # Connect to database
 
 

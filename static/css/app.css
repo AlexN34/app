@@ -1,0 +1,18 @@
+/**
+ * Custom CSS rules for the app.
+ */
+
+/* Navbar floats so need margin */
+.container {
+	margin-top: calc(70px + 5vh);
+}
+
+/* Bolds table head (top row) */
+.table-head {
+	font-weight: bold;
+}
+
+/* Emphasize active breadcrumb selection */
+.breadcrumb-item.active {
+	font-size: 1.35em;
+}
