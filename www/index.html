@@ -20,7 +20,29 @@
 </head>
 
 <body ng-controller="homeCtrl">
-  <h2>{{ testVar }}</h2>
+
+  <!-- Top navbar -->
+  <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#"><span class="glyphicon glyphicon-book"></span> BookSwapp</a>
+      </div>
+      <div id="navbar" class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="#" ng-click="">Home</a></li>
+          <li><a href="#" ng-click="">About</a></li>
+          <li><a href="#" ng-click="">Register</a></li>
+          <li><a href="#" ng-click="">Login</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Rest of page -->
+
 </body>
 
 </html>
