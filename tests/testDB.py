@@ -1,21 +1,67 @@
 #!/usr/bin/python3
-import app
+from app import app
 import MySQLdb
 import unittest
-import tempfile
-import os
 
 
-class BasicTestCase(unittest.TestCase):
+class BookSwapTestCase(unittest.TestCase):
     server = '176.58.96.74'
     user = 'comp4920'
     password = 'q3H286cJ5EXyGqRwcookies'
 
+    # Checks that landing page loads
     def test_index(self):
-        tester = app.app.test_client(self)
+        tester = app.test_client(self)
         response = tester.get('/', content_type='html/text')
         self.assertEqual(response.status_code, 200)
-        print("Test_index test passed")
+        print("Test_index  (route '/') test passed")
+
+    # Ensure login page loads correctly
+    def test_login_load(self):
+        tester = app.test_client(self)
+        response = tester.get('/login', content_type='html/text')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b'Please login' in response.data)
+        # Not logged on yet; check page asks for login
+
+    # Ensure login behaves correct with correct credentials
+    def test_correct_login(self):
+        tester = app.test_client(self)
+        response = tester.post('/login',
+                               data=dict(email="test@email.com",
+                                         password="strongpassword1"),
+                               follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b'Logged in as' in response.data)
+
+    # Ensure login behaves correct with incorrect credentials
+    def test_incorrect_login(self):
+        tester = app.test_client(self)
+        response = tester.post('/login',
+                               data=dict(email="wrong",
+                                         password="wrong"),
+                               follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b'Invalid' in response.data)
+
+    # Ensure logout behaves correctly
+    def test_logout(self):
+        tester = app.test_client(self)
+        response = tester.get('/logout', content_type='html/text')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b'You were logged out' in response.data)
+
+    # Ensure adding book button checks if user is logged in
+    def test_loggedin_to_add(self):
+        tester = app.test_client(self)
+        response = tester.get('/api/books/create', content_type='html/text')
+        self.assertNotEqual(response.status_code, 400)
+
+    # Ensure current book inventory shows on list load request
+    def test_inventory_shows(self):
+        tester = app.test_client(self)
+        # TODO: complete
+        print(tester)  # dummy code, replace
 
     def test_database(self):
         dbName = 'bookswapp'
@@ -53,6 +99,7 @@ class BasicTestCase(unittest.TestCase):
             print("end of database tests")
 
 
+"""
 class FlaskrTestCase (unittest.TestCase):
 
     def setUp(self):
@@ -67,26 +114,22 @@ class FlaskrTestCase (unittest.TestCase):
         os.unlink(app.app.config['DATABASE'])
 
     def login(self, username, password):
-        """ Login helper function"""
         return self.app.post('/login', data=dict(
             username=username,
             password=password
         ), follow_redirects=True)
 
     def logout(self):
-        """ Logout helper function """
         return self.app.get('/logout', follow_redirects=True)
 
     # assert functions
 
     def test_empty_db(self):
-        """ Ensure database is blank """
         rv = self.app.get('/')
         assert b'No entries here so far' in rv.data
         # self.assertTrue(rv)  # check if exists
 
     def test_login_logout(self):
-        """ Test login and logout using helper functions """
 
         rv = self.login(
             app.app.config['USERNAME'],
@@ -110,7 +153,7 @@ class FlaskrTestCase (unittest.TestCase):
         )
 
         assert b'Invalid password' in rv.data
-
+"""
 
 if __name__ == '__main__':
     unittest.main()

@@ -6,7 +6,7 @@ from flask import Flask, request, session, redirect, \
 from flask_api import status
 
 # import json  # possibly put back in if needed
-from flask_mysqldb import MySQL
+# from flask_mysqldb import MySQL
 import collections
 import MySQLdb
 import os
@@ -19,10 +19,11 @@ app.config['MYSQL_USER'] = 'comp4920'
 app.config['MYSQL_PASSWORD'] = 'q3H286cJ5EXyGqRw'
 app.config['MYSQL_DB'] = 'bookswapp'
 app.config.from_object(__name__)  # config from above variables in file
-#mysql = MySQL(app)  # attaches mysql object to the app?
+# mysql = MySQL(app)  # attaches mysql object to the app?
 
 # set the secret key
 app.secret_key = os.urandom(24)
+
 
 def connection():
     # mysql object holds credentials, use it to connect to db
@@ -67,7 +68,8 @@ def index():
         s += "<p>Not logged in</p>"
         s += login_form_html
 
-    return s, status.HTTP_200_OK  # check what comes back
+    return s, status.HTTP_200_OK
+    # check what comes back
     # return render_template('index.html', entries=entries)
 # Connect to database
 
@@ -108,7 +110,8 @@ def login():
     # ...
 
     # Check that email and password fields are not empty
-    if request.method == 'POST' and request.form['email'] and request.form['password']:
+    if request.method == 'POST' and request.form['email'] and \
+       request.form['password']:
         query = ("SELECT * FROM User WHERE email = %s")
         email = "%s" % request.form['email']
 
@@ -125,8 +128,10 @@ def login():
                 return redirect(url_for('index'))
         else:
             error = "Invalid email"
-    
+
+    # Point this to home page with status?
     return render_template('login.html', error=error)
+
 
 @app.route('/logout')
 def logout():
@@ -147,7 +152,7 @@ def register():
     c, con = connection()
     i = c.execute("SELECT * FROM User WHERE email = '%s'" % (email))
 
-    # If the email already exits, throw an error code
+    # If the email already exists, throw an error code
     if int(i) > 0:
         c.close()
         con.close()
