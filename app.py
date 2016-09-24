@@ -5,7 +5,6 @@ from flask import Flask, request, session, redirect, \
 # abort
 from flask_api import status
 
-import json  # possibly put back in if needed
 # from flask_mysqldb import MySQL
 import collections
 import MySQLdb
@@ -40,68 +39,18 @@ def connection():
 # View to show entries on Flaskr
 @app.route("/")
 def index():
-    s = """Current API:<br><br>
-    /login - NOT WORKING<br>
-    /logout - NOT WORKING<br>
-    /api/user/register -> Adds a new user to the database<br>
-    /api/user/<userid> -> Retrieves user information<br>
-    /api/user/list -> Lists all the users<br>
-    /api/books/create -> Adds a new book to the database<br>
-    /api/books/<bookid> -> Retrieves book information<br>
-    /api/books/list -> Lists all the books<br>"""
+    todo = """Current API:
+    /login - Basic working, needs hashing
+    /logout - NOT WORKING
+    /api/user/register -> Adds a new user to the database
+    /api/user/<userid> -> Retrieves user information
+    /api/user/list -> Lists all the users
+    /api/books/create -> Adds a new book to the database
+    /api/books/<bookid> -> Retrieves book information
+    /api/books/list -> Lists all the books"""
 
-    login_form_html = """
-<html>
-   <body>
-      <form action="http://localhost:5000/login" method="POST">
-         <p>Email<input type="text" name="email"></p>
-         <p>Password<input type="password" name="password"></p>
-         <p><input type="submit"></p>
-      </form>
-   </body>
-</html>"""
+    return render_template('index.html', todo=todo)
 
-    if 'logged_in' in session:
-        msg = "<p>Logged in as %s</p>" % session['email']
-        s += msg
-    else:
-        s += "<p>Not logged in</p>"
-        s += login_form_html
-    jsonList, status = get_userlist()
-
-    # return s, status.HTTP_200_OK
-    # check what comes back
-    # return json.loads(json.dumps(jsonList))
-    return render_template('index.html', json=json.loads(json.dumps(jsonList)))
-# Connect to database
-
-
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     """ User login/authentication/session management. """
-#     error = None
-#     """ Connect to database to check if user details exist """
-#     if request.method == 'POST':  # request is imported module
-#         c, conn = connection()
-#         c.execute("SELECT * FROM User WHERE email = %s"
-#                   % (request.form['email']))
-#         rv = c.fetchall()
-#         # if rv[2] is password field, somehow unhash it on compare
-#         # or, sha(1) hash input form field
-#         # passTest = sha(rv[2])
-#         passTest = 1  # dummy value, see above
-#         if request.form['email'] != rv[1]:
-#             # Assume email is second rv field; if none exist this will fail
-#             # Assumes app config sets up credentials in this variable
-#             # replace condition with lookup in database
-#             error = "Invalid email"
-#         elif passTest != rv[2]:  #
-#             error = "Invalid password"
-#         else:
-#             session['logged_in'] = True
-#             flash('You were logged in')
-#             return redirect(url_for('index'))
-#         return render_template('login.html', error=error)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -114,12 +63,16 @@ def login():
     # Check that email and password fields are not empty
     if request.method == 'POST' and request.form['email'] and \
        request.form['password']:
+        # Debugging: show input email
+        # flash(request.form['email'])
+        # flash(request.form['password'])
         query = ("SELECT * FROM User WHERE email = %s")
         email = "%s" % request.form['email']
 
         c, conn = connection()
         c.execute(query, [email])
         rv = c.fetchone()
+        flash(rv)
 
         if rv:
             if request.form['password'] != rv[2]:
@@ -127,12 +80,14 @@ def login():
             else:
                 session['email'] = request.form['email']
                 session['logged_in'] = True
+                flash("Success: you are now logged in")
+                # Back to list page on success with flash message
                 return redirect(url_for('index'))
         else:
             error = "Invalid email"
 
-    # Point this to home page with status?
-    return render_template('login.html', error=error)
+    # Point this to home page with errors if they occurred
+    return render_template('index.html', error=error)
 
 
 @app.route('/logout')
@@ -172,6 +127,7 @@ def register():
         return status.HTTP_201_CREATED
 
 
+# How will this be specified? TODO: figure out variable routing
 @app.route('/api/user/<userid>')
 def get_user(userid):
     c, con = connection()
@@ -187,10 +143,9 @@ def get_user(userid):
             'University': values[3],
             'Location': values[4]
             }), status.HTTP_200_OK
-    else:
-        c.close()
-        con.close()
-        return status.HTTP_404_NOT_FOUND
+    c.close()
+    con.close()
+    return status.HTTP_204_NO_CONTENT
 
 
 @app.route('/api/user/list')
@@ -198,6 +153,7 @@ def get_userlist():
     c, con = connection()
     c.execute('''SELECT * FROM User''')
     rv = c.fetchall()
+    finalState = status.HTTP_204_NO_CONTENT
 
     # http://codehandbook.org/working-with-json-in-python-flask/
     userList = []
@@ -211,10 +167,12 @@ def get_userlist():
         }
         userList.append(collections.OrderedDict(userDict))
 
-    # return json.dumps(userList)
     c.close()
     con.close()
-    return jsonify(userList), status.HTTP_200_OK  # Pretty printing
+    # set status code based on users found
+    if userList.count > 0:
+        finalState = status.HTTP_200_OK
+    return render_template('index.html', json=jsonify(userList)), finalState
 
 
 @app.route('/api/books/create', methods=['POST'])
@@ -243,6 +201,7 @@ def add_book():
     description = request.form.get('description', None)
     margin = request.form.get('margin', None)
 
+    # How to signal fail - TODO: try except block?
     c, con = connection()
 
     q = """INSERT INTO Book
@@ -317,19 +276,6 @@ def get_booklist():
     c.close()
     con.close()
     return jsonify(bookList), status.HTTP_200_OK
-
-
-# @app.teardown_appcontext
-
-
-# Connection closed for you in Flask-MySQL
-# def close_db(connection):
-    # # if connection is available, close it down
-    # try:
-    # connection.cursor.close()
-    # connection.close()
-    # except MySQLdb.Error as e:
-    # print("ERROR %d IN CLOSE: %s" % (e.args[0], e.args[1]))
 
 
 if __name__ == "__main__":

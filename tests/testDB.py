@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 from app import app
+import json
 import MySQLdb
 import unittest
 
@@ -62,6 +63,13 @@ class BookSwapTestCase(unittest.TestCase):
         tester = app.test_client(self)
         # TODO: complete
         print(tester)  # dummy code, replace
+
+    # Ensure api request for user list actually returns a json object
+    def test_users_show(self):
+        tester = app.test_client(self)
+        response = tester.get('/api/user/list', content_type='html/text')
+        self.assertTrue(isinstance(json))  # how to specify json object?
+        print(response)
 
     def test_database(self):
         dbName = 'bookswapp'

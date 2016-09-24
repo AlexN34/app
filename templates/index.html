@@ -1,50 +1,17 @@
-<!DOCTYPE html>
-<html ng-app="bookSwapp">
-<head>
-  <title>BookSwapp</title>
-
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css?family=Raleway:500" rel="stylesheet" type="text/css">
-
-  <!-- dependencies: bootstrap, angular, fonts -->
-  <link rel="stylesheet" href={{ url_for('static', filename="css/bootstrap.min.css") }}>
-  <script src={{ url_for('static', filename="js/jquery.min.js") }}></script>
-  <script src={{ url_for('static', filename="js/angular.min.js") }}></script>
-  <script src={{ url_for('static', filename="js/angular-animate.min.js") }}></script>
-  <script src={{ url_for('static', filename="js/bootstrap.min.js") }}></script>
-  <!-- Angular UI for Bootstrap -->
-  <script src={{ url_for('static', filename="js/ui-bootstrap.min.js") }}></script>
-
-  <!-- Our app stylesheet and source -->
-  <link rel="stylesheet" href= {{ url_for('static', filename="css/app.css") }} >
-  <script src={{ url_for('static', filename="js/app.js") }}></script>
-</head>
-
-<body ng-controller="homeCtrl">
-
-  <!-- Top navbar -->
-  <nav class="navbar navbar-default navbar-fixed-top">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="#"><span class="glyphicon glyphicon-book"></span> BookSwapp</a>
-      </div>
-      <div id="navbar" class="navbar-collapse collapse">
-        <ul class="nav navbar-nav">
-          <li class="active"><a href="#" ng-click="">Home</a></li>
-          <li><a href="#" ng-click="">About</a></li>
-          <li><a href="#" ng-click="">Register</a></li>
-          <li><a href="/login" ng-click="">Login</a></li>
-        </ul>
-        <ul class="nav navbar-nav navbar-right">
-          <li><a href="#">Contact</a></li>
-        </ul>
-      </div>
-    </div>
-  </nav>
-
+{% extends "base.html" %}
+{% block content %}
   <!-- Rest of the page -->
   <div class="container">
+      <pre><code>{{ todo }}</code></pre>
 
+    <!-- Display any returned error/flashed errors from last call -->
+      {% for message in get_flashed_messages() %}
+        <div class="flash">{{ message }}</div>
+      {% endfor %}
+      {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}</p>
+      {% endif %}
+        {% include 'login.html' %}
     <!-- Breadcrumbs -->
     <ol class="breadcrumb pull-right">
       <li class="breadcrumb-item active">Selling</li>
@@ -64,20 +31,12 @@
         </tr>
       </thead>
       <tbody>
-
+        {% for item in userDict %}
+        <tr>
+            <td>{{ item }}</td>
         </tr>
+        {% endfor %}
       </tbody>
     </table>
-
   </div>
-  <div class="container">
-      <ul>
-    {% for item in json %}
-        <li> {{ item }} </li>
-    {% endfor %}
-      </ul>
-  </div>
-
-</body>
-
-</html>
+{% endblock %}
