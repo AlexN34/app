@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 # imports
 from flask import Flask, request, session, redirect, \
     url_for, render_template, flash, jsonify
@@ -40,9 +40,13 @@ def connection():
 @app.route("/")
 def index():
     todo = """Current API:
-    /login - Basic working, needs hashing
-    /logout - NOT WORKING
+    /login - show login screen
+    /logout - works
+    /register - show registration form
+    /api/user/login -> logs user in; basic function works, needs hashing
     /api/user/register -> Adds a new user to the database
+
+    ========== Not yet confirmed working =============
     /api/user/<userid> -> Retrieves user information
     /api/user/list -> Lists all the users
     /api/books/create -> Adds a new book to the database
@@ -52,7 +56,12 @@ def index():
     return render_template('index.html', todo=todo)
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login')
+def show_login_page():
+    return render_template('login.html')
+
+
+@app.route('/api/user/login', methods=['GET', 'POST'])
 def login():
     """ User login/authentication/session management. """
     error = "Invalid email/password"
@@ -99,6 +108,11 @@ def logout():
     return redirect(url_for('index'))
 
 
+@app.route('/register')
+def show_registration():
+    return render_template('register.html')
+
+
 @app.route('/api/user/register', methods=['GET', 'POST'])
 def register():
     email = request.form['email']
@@ -107,13 +121,15 @@ def register():
     location = request.form.get('location', None)
 
     c, con = connection()
-    i = c.execute("SELECT * FROM User WHERE email = '%s'" % (email))
+    c.execute("SELECT * FROM User WHERE email = '%s'" % (email))
+    rv = c.fetchall()
 
     # If the email already exists, throw an error code
-    if int(i) > 0:
+    if rv.__len__() > 0:
+        flash("This email already exists. Please pick a new one")
         c.close()
         con.close()
-        return status.HTTP_400_BAD_REQUEST
+        return redirect(url_for('index')), status.HTTP_400_BAD_REQUEST
     # Create the user return success status
     else:
         q = """
@@ -124,7 +140,12 @@ def register():
         con.commit()
         c.close()
         con.close()
-        return status.HTTP_201_CREATED
+        flash("Just registered new user. Details are:")
+        flash(request.form['email'])
+        flash(request.form['password'])
+        flash(request.form['university'])
+        flash(request.form['location'])
+        return redirect(url_for('index')), status.HTTP_201_CREATED
 
 
 # How will this be specified? TODO: figure out variable routing
@@ -247,10 +268,11 @@ def get_book(bookid):
         return status.HTTP_404_NOT_FOUND
 
 
-@app.route('/api/books/list')
+# Change type depending on which we want the list of: Selling/Wanted/Swap
+@app.route('/api/books/list/<type>')
 def get_booklist():
     c, con = connection()
-    c.execute("SELECT * FROM Book")
+    c.execute("SELECT * FROM Book WHERE transaction_type = '{0}".format(type))
     rv = c.fetchall()
 
     # http://codehandbook.org/working-with-json-in-python-flask/
