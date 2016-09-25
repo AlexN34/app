@@ -152,7 +152,12 @@ def register():
 @app.route('/api/user/<userid>')
 def get_user(userid):
     c, con = connection()
-    i = c.execute("SELECT * FROM User WHERE user_id = '{0}'".format(userid))
+    try:
+        i = c.execute("SELECT * FROM User WHERE user_id = '{0}'".format(userid))
+    except TypeError as e:
+        flash(e)  # show in flash on next load
+        return status.HTTP_400_BAD_REQUEST
+
     if int(i) > 0:
         values = c.fetchone()
         c.close()
