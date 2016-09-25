@@ -6,7 +6,7 @@ from flask import Flask, request, session, redirect, \
 from flask_api import status
 
 # from flask_mysqldb import MySQL
-import collections
+#import collections
 import MySQLdb
 import os
 # configuration of db
@@ -186,7 +186,7 @@ def get_userlist():
             'University': user[3],
             'Location': user[4]
         }
-        userList.append(collections.OrderedDict(userDict))
+        userList.append(userDict)
 
     c.close()
     con.close()
@@ -254,7 +254,7 @@ def get_book(bookid):
             'Author': values[2],
             'ISBN': values[3],
             'Prescribed Course': values[4],
-            'Condntion': values[5],
+            'Condition': values[5],
             'Transaction Type': values[6],
             'Price': values[7],
             'Pages': values[8],
@@ -284,7 +284,7 @@ def get_booklist():
             'Author': book[2],
             'ISBN': book[3],
             'Prescribed Course': book[4],
-            'Condntion': book[5],
+            'Condition': book[5],
             'Transaction Type': book[6],
             'Price': book[7],
             'Pages': book[8],
@@ -292,7 +292,7 @@ def get_booklist():
             'Description': book[10],
             'Margin': book[11]
         }
-        bookList.append(collections.OrderedDict(bookDict))
+        bookList.append(bookDict)
 
     # return json.dumps(userList)
     c.close()
