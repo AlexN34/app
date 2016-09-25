@@ -217,50 +217,54 @@ def add_book():
     price = request.form['price']
 
     # OPTION PARAMS
-    pages = request.form.get('pages', None)
+    status = request.form.get('status', None)
     edition = request.form.get('edition', None)
     description = request.form.get('description', None)
     margin = request.form.get('margin', None)
 
+    print("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s" % (name, author, isbn, prescribed_course, edition, condition, transaction_type, status, price, margin, description))
     # How to signal fail - TODO: try except block?
     c, con = connection()
 
-    q = """INSERT INTO Book
-        (name, author, isbn, prescribed_course, condition, transaction_type,
-         price, pages, edition, description, margin)
-         VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}',
-                '{9}', '{10}')""".format(name, author, isbn, prescribed_course,
-                                         condition, transaction_type, price,
-                                         pages, edition, description, margin)
-    c.execute(q)
+    # http://dev.mysql.com/doc/refman/5.7/en/keywords.html
+    # 'condition' is a reserved keyboard, have to put it in backticks according to
+    # http://stackoverflow.com/questions/21046293/error-in-sql-syntax-for-python-and-mysql-on-insert-operation
+    query = ("INSERT INTO Book "
+    "(name, author, isbn, prescribed_course, edition, `condition`, transaction_type, status, price, margin, description) "
+    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+    values = (name, author, isbn, prescribed_course, edition, condition, transaction_type, status, price, margin, description)
+    c.execute(query, values)
+
     con.commit()
     c.close()
     con.close()
-    return status.HTTP_201_CREATED
+    #return status.HTTP_201_CREATED
+    return "Book created!"
 
 
 @app.route('/api/books/<bookid>')
 def get_book(bookid):
     c, con = connection()
-    i = c.execute("SELECT * FROM Book WHERE book_id = '{0}'".format(bookid))
-    if int(i) > 0:
-        # values = c.fetchall()
-        values = c.fetchone()
+    query = ("SELECT * FROM Book WHERE book_id = %s")
+    c.execute(query, [bookid])
+    rv = c.fetchone()
+
+    if rv:
         c.close()
         con.close()
         return jsonify({
-            'Book ID': values[0],
-            'Name': values[1],
-            'Author': values[2],
-            'ISBN': values[3],
-            'Prescribed Course': values[4],
-            'Condition': values[5],
-            'Transaction Type': values[6],
-            'Price': values[7],
-            'Pages': values[8],
-            'Edition': values[9],
-            'Description': values[10],
-            'Margin': values[11],
+            'Book ID': rv[0],
+            'Name': rv[1],
+            'Author': rv[2],
+            'ISBN': rv[3],
+            'Prescribed Course': rv[4],
+            'Edition': rv[5],
+            'Condition': rv[6],
+            'Transaction type': rv[7],
+            'Status': rv[8],
+            'Price': float(rv[9]), # Decimal is not JSON serializable error otherwise
+            'Margin': float(rv[10]), # Decimal is not JSON serializable error otherwise
+            'Description': rv[11],
             }), status.HTTP_200_OK
     else:
         c.close()
@@ -269,10 +273,11 @@ def get_book(bookid):
 
 
 # Change type depending on which we want the list of: Selling/Wanted/Swap
-@app.route('/api/books/list/<type>')
-def get_booklist():
+@app.route('/api/books/list/<transaction_type>')
+def get_booklist(transaction_type):
     c, con = connection()
-    c.execute("SELECT * FROM Book WHERE transaction_type = '{0}".format(type))
+    query = ("SELECT * FROM Book WHERE transaction_type = %s")
+    c.execute(query, [transaction_type])
     rv = c.fetchall()
 
     # http://codehandbook.org/working-with-json-in-python-flask/
@@ -284,13 +289,13 @@ def get_booklist():
             'Author': book[2],
             'ISBN': book[3],
             'Prescribed Course': book[4],
-            'Condition': book[5],
-            'Transaction Type': book[6],
-            'Price': book[7],
-            'Pages': book[8],
-            'Edition': book[9],
-            'Description': book[10],
-            'Margin': book[11]
+            'Edition': book[5],
+            'Condition': book[6],
+            'Transaction type': book[7],
+            'Status': book[8],
+            'Price': float(book[9]), # Decimal is not JSON serializable error otherwise
+            'Margin': float(book[10]), # Decimal is not JSON serializable error otherwise
+            'Description': book[11],
         }
         bookList.append(bookDict)
 
