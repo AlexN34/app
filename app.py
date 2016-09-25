@@ -12,7 +12,7 @@ import os
 # configuration of db
 
 # create and initialise app
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 app.config['MYSQL_HOST'] = '176.58.96.74'
 app.config['MYSQL_USER'] = 'comp4920'
 app.config['MYSQL_PASSWORD'] = 'q3H286cJ5EXyGqRw'
@@ -125,7 +125,7 @@ def register():
     rv = c.fetchall()
 
     # If the email already exists, throw an error code
-    if rv.__len__() > 0:
+    if len(rv) > 0:
         flash("This email already exists. Please pick a new one")
         c.close()
         con.close()
@@ -191,9 +191,9 @@ def get_userlist():
     c.close()
     con.close()
     # set status code based on users found
-    if userList.count > 0:
+    if len(userList) > 0:
         finalState = status.HTTP_200_OK
-    return render_template('index.html', json=jsonify(userList)), finalState
+    return jsonify(userList), finalState
 
 
 @app.route('/api/books/create', methods=['POST'])
@@ -300,5 +300,8 @@ def get_booklist():
     return jsonify(bookList), status.HTTP_200_OK
 
 
-if __name__ == "__main__":
+# @app.route('/test')
+# def testJson():
+    # return render_template('test.html')
+# if __name__ == "__main__":
     app.run(debug=True)

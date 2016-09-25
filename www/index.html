@@ -65,11 +65,11 @@
       </thead>
       <tbody>
         <tr ng-repeat="listing in listings">
-          <td>{{ listing.id }}</td>
-          <td>{{ listing.name }}</td>
-          <td>${{ listing.price | number : 2 }}</td>
-          <td>{{ listing.location }}</td>
-          <td>{{ listing.type }}</td>
+          <td>[[ listing.id ]]</td>
+          <td>[[ listing.name ]]</td>
+          <td>$[[ listing.price | number : 2 ]]</td>
+          <td>[[ listing.location ]]</td>
+          <td>[[ listing.type ]]</td>
         </tr>
       </tbody>
     </table>

@@ -3,11 +3,20 @@
  */
 var bookSwapp = angular.module('bookSwapp', [ 'ui.bootstrap', 'ngAnimate' ]);
 
+bookSwapp.config(function($interpolateProvider) {
+    $interpolateProvider.startSymbol('[[');
+    $interpolateProvider.endSymbol(']]');
+});
+
 bookSwapp.controller('homeCtrl', ['$scope', '$http',
 	function($scope, $http) {
 
 		// @TODO this will be fetched from the server via an API call
 		// currently is just hardcoded test data
+        $http.get('http://0.0.0.0/api/user/list').success(function(data) {
+            $scope.users = data
+        });
+
 		$scope.listings = [
 			{
 				id: 1,

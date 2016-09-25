@@ -29,13 +29,41 @@
           <td>Type</td>
         </tr>
       </thead>
+      <!-- Fill in db info -->
       <tbody>
-        {% for item in userDict %}
-        <tr>
-            <td>{{ item }}</td>
+        <tr ng-repeat="listing in listings">
+          <td>[[ listing.id ]]</td>
+          <td>[[ listing.name ]]</td>
+          <td>$[[ listing.price | number : 2 ]]</td>
+          <td>[[ listing.location ]]</td>
+          <td>[[ listing.type ]]</td>
         </tr>
-        {% endfor %}
+
       </tbody>
     </table>
+    <table class="table table-bordered table-hover">
+          <thead class="table-head">
+            <tr>
+              <td>User #</td>
+              <td>Email</td>
+              <td>Password</td>
+              <td>University</td>
+              <td>Location</td>
+            </tr>
+          </thead>
+          <!-- Fill in db info -->
+          <tbody>
+            <tr ng-repeat="user in users">
+              <td>[[ user.user_id ]]</td>
+              <td>[[ user.email ]]</td>
+              <td>[[ user.password ]]</td>
+              <td>[[ user.university ]]</td>
+              <td>[[ user.location ]]</td>
+            </tr>
+
+          </tbody>
+        </table>
+
   </div>
 {% endblock %}
+
