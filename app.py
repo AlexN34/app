@@ -89,6 +89,7 @@ def login():
             else:
                 session['email'] = request.form['email']
                 session['logged_in'] = True
+                session['user_id'] = rv[0]
                 flash("Success: you are now logged in")
                 # Back to list page on success with flash message
                 return redirect(url_for('index'))
@@ -104,6 +105,7 @@ def logout():
     """ User logout/authentication/session management. """
     session.pop('email', None)
     session.pop('logged_in', False)
+    session.pop('user_id', None)
     flash('You were logged out')
     return redirect(url_for('index'))
 
@@ -156,7 +158,7 @@ def get_user(userid):
         i = c.execute("SELECT * FROM User WHERE user_id = '{0}'".format(userid))
     except TypeError as e:
         flash(e)  # show in flash on next load
-        return status.HTTP_400_BAD_REQUEST
+        return '', status.HTTP_400_BAD_REQUEST
 
     if int(i) > 0:
         values = c.fetchone()
@@ -171,7 +173,7 @@ def get_user(userid):
             }), status.HTTP_200_OK
     c.close()
     con.close()
-    return status.HTTP_204_NO_CONTENT
+    return '', status.HTTP_204_NO_CONTENT
 
 
 @app.route('/api/user/list')
@@ -210,8 +212,8 @@ def add_book():
     # Removed previous session handling because it's not implemented yet.
     # MUST BE DEFINED
 
-    if not session['logged_in']:
-        return status.HTTP_400_BAD_REQUEST
+    if not session.get('logged_in'):
+        return '', status.HTTP_400_BAD_REQUEST
 
     name = request.form['name']
     author = request.form['author']
@@ -240,12 +242,43 @@ def add_book():
     values = (name, author, isbn, prescribed_course, edition, condition, transaction_type, status, price, margin, description)
     c.execute(query, values)
 
+    # Mark book listing as belonging to user
+    book_id = c.lastrowid # Get the id of the newly inserted book
+    query = ("INSERT INTO Book_List (user_id, book_id) VALUES (%s, %s)")
+    values = (session['user_id'], book_id)
+    c.execute(query, values)
+
     con.commit()
     c.close()
     con.close()
-    #return status.HTTP_201_CREATED
-    return "Book created!"
+    return '', status.HTTP_201_CREATED
+    # return "Book created!"
 
+#@app.route('/api/books/delete/<bookid>', methods=['DELETE'])
+@app.route('/api/books/delete/<bookid>') # Using GET method for now for easier testing 
+def delete_book(bookid):
+    # Check user is logged in, and that they own the associated book listing
+    if not session.get('logged_in'):
+        return '', status.HTTP_400_BAD_REQUEST
+    
+    c, con = connection()
+    query = ("SELECT * FROM Book_List WHERE book_id = %s")
+    c.execute(query, [bookid])
+    rv = c.fetchone()
+
+    if rv and (rv[0] == session['user_id']):
+        query = ("DELETE FROM Book WHERE book_id = %s")
+        c.execute(query, [bookid])
+        query = ("DELETE FROM Book_List WHERE book_id = %s")
+        c.execute(query, [bookid])
+        con.commit()
+        c.close()
+        con.close()
+        return '', status.HTTP_200_OK
+        # return "Book deleted"
+
+    return '', status.HTTP_400_BAD_REQUEST
+    # return "Given book_id does not exist"
 
 @app.route('/api/books/<bookid>')
 def get_book(bookid):
@@ -274,17 +307,23 @@ def get_book(bookid):
     else:
         c.close()
         con.close()
-        return status.HTTP_404_NOT_FOUND
+        return '', status.HTTP_404_NOT_FOUND
 
 
 # Change type depending on which we want the list of: Selling/Wanted/Swap
+# transaction_type = sell, buy, swap or all 
 @app.route('/api/books/list/<transaction_type>')
 def get_booklist(transaction_type):
     c, con = connection()
-    query = ("SELECT * FROM Book WHERE transaction_type = %s")
-    c.execute(query, [transaction_type])
-    rv = c.fetchall()
 
+    if transaction_type == "all":
+        query = ("SELECT * FROM Book")
+        c.execute(query)
+    else:
+        query = ("SELECT * FROM Book WHERE transaction_type = %s")
+        c.execute(query, [transaction_type])
+
+    rv = c.fetchall()
     # http://codehandbook.org/working-with-json-in-python-flask/
     bookList = []
     for book in rv:
@@ -309,6 +348,25 @@ def get_booklist(transaction_type):
     con.close()
     return jsonify(bookList), status.HTTP_200_OK
 
+# Testing purposes
+@app.route('/api/listings')
+def get_listings():
+    c, con = connection()
+    query = ("SELECT * FROM Book_List")
+    c.execute(query)
+    rv = c.fetchall()
+
+    listings = []
+    for item in rv:
+        listingDict = {
+            'User ID': item[0],
+            'Book ID': item[1]
+        }
+        listings.append(listingDict)
+
+    c.close()
+    con.close()
+    return jsonify(listings), status.HTTP_200_OK
 
 # @app.route('/test')
 # def testJson():
