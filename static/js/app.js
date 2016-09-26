@@ -3,6 +3,8 @@
  */
 var bookSwapp = angular.module('bookSwapp', [ 'ui.bootstrap', 'ngAnimate' ]);
 
+// Changes delimiters from using {{}} to [[]]. 
+// Done so that both templates w/ Jinja2 (also uses {{}} syntax) and Angular can be used
 bookSwapp.config(function($interpolateProvider) {
     $interpolateProvider.startSymbol('[[');
     $interpolateProvider.endSymbol(']]');

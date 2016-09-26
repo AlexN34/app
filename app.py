@@ -6,7 +6,7 @@ from flask import Flask, request, session, redirect, \
 from flask_api import status
 
 # from flask_mysqldb import MySQL
-#import collections
+# import collections
 import MySQLdb
 import os
 # configuration of db
@@ -229,7 +229,9 @@ def add_book():
     description = request.form.get('description', None)
     margin = request.form.get('margin', None)
 
-    print("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s" % (name, author, isbn, prescribed_course, edition, condition, transaction_type, status, price, margin, description))
+    print("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
+          % (name, author, isbn, prescribed_course, edition, condition,
+             transaction_type, status, price, margin, description))
     # How to signal fail - TODO: try except block?
     c, con = connection()
 
@@ -255,12 +257,12 @@ def add_book():
     # return "Book created!"
 
 #@app.route('/api/books/delete/<bookid>', methods=['DELETE'])
-@app.route('/api/books/delete/<bookid>') # Using GET method for now for easier testing 
+@app.route('/api/books/delete/<bookid>') # Using GET method for now for easier testing
 def delete_book(bookid):
     # Check user is logged in, and that they own the associated book listing
     if not session.get('logged_in'):
         return '', status.HTTP_400_BAD_REQUEST
-    
+
     c, con = connection()
     query = ("SELECT * FROM Book_List WHERE book_id = %s")
     c.execute(query, [bookid])
@@ -311,7 +313,7 @@ def get_book(bookid):
 
 
 # Change type depending on which we want the list of: Selling/Wanted/Swap
-# transaction_type = sell, buy, swap or all 
+# transaction_type = sell, buy, swap or all
 @app.route('/api/books/list/<transaction_type>')
 def get_booklist(transaction_type):
     c, con = connection()
@@ -371,5 +373,5 @@ def get_listings():
 # @app.route('/test')
 # def testJson():
     # return render_template('test.html')
-# if __name__ == "__main__":
+if __name__ == "__main__":
     app.run(debug=True)
