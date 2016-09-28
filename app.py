@@ -134,14 +134,22 @@ def register():
         return redirect(url_for('index')), status.HTTP_400_BAD_REQUEST
     # Create the user return success status
     else:
-        q = """
-            INSERT INTO User (email, password, university, location) VALUES
-            ('{0}', '{1}', '{2}', '{3}')
-            """.format(email, password, university, location)
-        c.execute(q)
+        # This format supposedly prevents SQL injections
+        query = ("INSERT INTO User "
+        "(email, password, university, location) "
+        "VALUES (%s, %s, %s, %s)")
+        values = (email, password, university, location)
+        c.execute(query, values)
+
+        # q = """
+        #     INSERT INTO User (email, password, university, location) VALUES
+        #     ('{0}', '{1}', '{2}', '{3}')
+        #     """.format(email, password, university, location)
+        # c.execute(q)
         con.commit()
         c.close()
         con.close()
+
         flash("Just registered new user. Details are:")
         flash(request.form['email'])
         flash(request.form['password'])
@@ -175,6 +183,41 @@ def get_user(userid):
     con.close()
     return '', status.HTTP_204_NO_CONTENT
 
+#@app.route('/api/user/delete/<userid>', methods=['DELETE'])
+@app.route('/api/user/delete/<userid>') # Using GET method for now for easier testing
+def delete_user(userid):
+    # Check user is logged in
+    if not session.get('logged_in'):
+        return 'Error: Not logged in', status.HTTP_400_BAD_REQUEST
+
+    # Check logged in user is the one being deleted
+    if str(userid) == str(session['user_id']):
+        c, con = connection()
+
+        # Delete all book listings under this user 
+        query = ("SELECT * FROM Book_List WHERE user_id = %s")
+        c.execute(query, [userid])
+        rv = c.fetchall()
+
+        for listing in rv:
+            bookid = listing[1]
+            query = ("DELETE FROM Book WHERE book_id = %s")
+            c.execute(query, [bookid])
+
+        query = ("DELETE FROM Book_List WHERE user_id = %s")
+        c.execute(query, [userid])
+
+        # Delete the account itself
+        query = ("DELETE FROM User WHERE user_id = %s")
+        c.execute(query, [userid])
+
+        con.commit()
+        c.close()
+        con.close()
+        logout()
+        return '', status.HTTP_200_OK
+
+    return 'Error: Unauthorised deletion', status.HTTP_400_BAD_REQUEST
 
 @app.route('/api/user/list')
 def get_userlist():
@@ -229,9 +272,6 @@ def add_book():
     description = request.form.get('description', None)
     margin = request.form.get('margin', None)
 
-    print("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
-          % (name, author, isbn, prescribed_course, edition, condition,
-             transaction_type, status, price, margin, description))
     # How to signal fail - TODO: try except block?
     c, con = connection()
 
@@ -253,8 +293,8 @@ def add_book():
     con.commit()
     c.close()
     con.close()
-    return '', status.HTTP_201_CREATED
-    # return "Book created!"
+    #return '', status.HTTP_201_CREATED
+    return "Book created!" # Still can't return the above line for some reason...
 
 #@app.route('/api/books/delete/<bookid>', methods=['DELETE'])
 @app.route('/api/books/delete/<bookid>') # Using GET method for now for easier testing
