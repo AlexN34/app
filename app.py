@@ -53,7 +53,11 @@ def index():
     /api/books/<bookid> -> Retrieves book information
     /api/books/list -> Lists all the books"""
 
-    return render_template('index.html', todo=todo)
+    if session.get('logged_in'):
+        userid = session['user_id']
+    else:
+        userid = 0
+    return render_template('index.html', todo=todo, userid=userid)
 
 
 @app.route('/login')
@@ -182,6 +186,51 @@ def get_user(userid):
     c.close()
     con.close()
     return '', status.HTTP_204_NO_CONTENT
+
+# @app.route('/api/user/update/<userid>', methods=['PUT'])
+@app.route('/api/user/update/<userid>', methods=['POST']) # Using POST method for now for easier testing
+def update_user(userid):
+    # Check user is logged in
+    if not session.get('logged_in'):
+        return 'Error: Not logged in', status.HTTP_400_BAD_REQUEST
+
+    # Check logged in user is the one being updated
+    if str(userid) == str(session['user_id']):
+        c, con = connection()
+
+        # Should validate/sanitise fields
+        if (request.form['email']):
+            query = ("UPDATE User SET email = %s WHERE user_id = %s")
+            values = (request.form['email'], userid)
+            c.execute(query, values)
+            session['email'] = request.form['email']
+            print("Email updated")
+
+        if (request.form['password']):
+            query = ("UPDATE User SET password = %s WHERE user_id = %s")
+            values = (request.form['password'], userid)
+            c.execute(query, values)            
+            print("Password updated")
+
+        if (request.form['university']):
+            query = ("UPDATE User SET university = %s WHERE user_id = %s")
+            values = (request.form['university'], userid)
+            c.execute(query, values) 
+            print("University updated")
+
+        if (request.form['location']):
+            query = ("UPDATE User SET location = %s WHERE user_id = %s")
+            values = (request.form['location'], userid)
+            c.execute(query, values) 
+            print("Location updated")
+
+        con.commit()
+        c.close()
+        con.close()
+        return '', status.HTTP_200_OK
+
+    return 'Error: Unauthorised update', status.HTTP_400_BAD_REQUEST
+
 
 #@app.route('/api/user/delete/<userid>', methods=['DELETE'])
 @app.route('/api/user/delete/<userid>') # Using GET method for now for easier testing

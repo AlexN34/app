@@ -4,18 +4,28 @@
   <div class="container">
       <pre><code>{{ todo }}</code></pre>
 
+      <h4>Add book listing</h4>
       <form action="/api/books/create" method=POST>
         Name<input type="text" name="name"><br>
         Author<input type="text" name="author"><br>
         ISBN<input type="text" name="isbn"><br>
         Course<input type="text" name="prescribed_course"><br>
-        Ed<input type="text" name="edition"><br>
+        Edition<input type="text" name="edition"><br>
         Condition<input type="text" name="condition"><br>
         Transaction<input type="text" name="transaction_type"><br>
         Status<input type="text" name="status"><br>
         Price<input type="text" name="price"><br>
-        Mar<input type="text" name="margin"><br>
-        Descr<input type="text" name="description"><br>
+        Margin<input type="text" name="margin"><br>
+        Description<input type="text" name="description"><br>
+        <input type="submit" value="Submit">
+      </form>
+      <br>
+      <h4>Update user details</h4>
+      <form action="/api/user/update/{{ userid }}" method=POST>
+        Email<input type="text" name="email"><br>
+        Password<input type="password" name="password"><br>
+        University<input type="text" name="university"><br>
+        Location<input type="text" name="location"><br>
         <input type="submit" value="Submit">
       </form>
 
