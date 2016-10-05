@@ -3,16 +3,13 @@
  */
 var bookSwapp = angular.module('bookSwapp', [ 'ui.bootstrap', 'ngAnimate' ]);
 
-bookSwapp.config(function ($interpolateProvider) {
-    $interpolateProvider.startSymbol('[[');
-    $interpolateProvider.endSymbol(']]');
-})
 bookSwapp.controller('homeCtrl', ['$scope', '$http',
 	function($scope, $http) {
 
 		// @TODO this will be fetched from the server via an API call
 		// currently is just hardcoded test data
 
+		/*
 		$scope.listings = [
 			{
 				id: 1,
@@ -36,5 +33,21 @@ bookSwapp.controller('homeCtrl', ['$scope', '$http',
 				type: 'Swap'
 			}
 		];
+		*/
+
+		$http({
+			method: 'GET',
+			url: 'http://128.199.77.131:19210/api/books/list/all'
+		}).then(function successCallback(response) {
+			$scope.listings = response.data;
+		}, function errorCallback(response) {
+			console.log('Errored out: ' + JSON.stringify(response));
+		});
+
+		$scope.selectedType = 'selling';
+
+		$scope.selectType = function(type) {
+			$scope.selectedType = type;
+		};
 	}
 ]);

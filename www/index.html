@@ -47,10 +47,12 @@
 
     <!-- Breadcrumbs -->
     <ol class="breadcrumb pull-right">
-      <li class="breadcrumb-item active">Selling</li>
-      <li class="breadcrumb-item"><a href="#">Wanted</a></li>
-      <li class="breadcrumb-item"><a href="#">Swap</a></li>
+      <li class="breadcrumb-item" ng-class="{ 'active' : (selectedType === 'selling') }"><a href="#" ng-click="selectType('selling')">Selling</a></li>
+      <li class="breadcrumb-item" ng-class="{ 'active' : (selectedType === 'wanted') }"><a href="#" ng-click="selectType('wanted')">Wanted</a></li>
+      <li class="breadcrumb-item" ng-class="{ 'active' : (selectedType === 'swap') }"><a href="#" ng-click="selectType('swap')">Swap</a></li>
     </ol>
+
+    <div ng-if="showSomething">ofdignsfdoigsn</div>
 
     <!-- Main table -->
     <table class="table table-bordered table-hover">
@@ -59,17 +61,17 @@
           <td>#</td>
           <td>Name</td>
           <td>Price</td>
-          <td>Location</td>
+          <td>Status</td>
           <td>Type</td>
         </tr>
       </thead>
       <tbody>
         <tr ng-repeat="listing in listings">
-          <td>[[ listing.id ]]</td>
-          <td>[[ listing.name ]]</td>
-          <td>$[[ listing.price | number : 2 ]]</td>
-          <td>[[ listing.location ]]</td>
-          <td>[[ listing.type ]]</td>
+          <td>{{ listing['Book ID'] }}</td>
+          <td>{{ listing['Name'] }}</td>
+          <td>${{ listing['Price'] | number : 2 }}</td>
+          <td>{{ listing['Status'] }}</td>
+          <td>{{ listing['Transaction type'] }}</td>
         </tr>
       </tbody>
     </table>
