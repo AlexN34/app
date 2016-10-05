@@ -35,6 +35,7 @@ def connection():
     c = conn.cursor()
     return c, conn
 
+@crossdomain(origin='localhost', headers='Content-Type')
 
 # View to show entries on Flaskr
 @app.route("/")
