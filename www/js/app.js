@@ -37,7 +37,7 @@ bookSwapp.controller('homeCtrl', ['$scope', '$http',
 
 		$http({
 			method: 'GET',
-			url: 'http://128.199.77.131:19210/api/books/list/all'
+			url: 'http://bookswapp.apps.mlux.me/api/books/list/all'
 		}).then(function successCallback(response) {
 			$scope.listings = response.data;
 		}, function errorCallback(response) {

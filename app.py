@@ -4,6 +4,7 @@ from flask import Flask, request, session, redirect, \
     url_for, render_template, flash, jsonify
 # abort
 from flask_api import status
+from flask_cors import CORS, cross_origin
 
 # from flask_mysqldb import MySQL
 # import collections
@@ -23,6 +24,8 @@ app.config.from_object(__name__)  # config from above variables in file
 # set the secret key
 app.secret_key = os.urandom(24)
 
+# allow cross origin requests
+CORS(app)
 
 def connection():
     # mysql object holds credentials, use it to connect to db
@@ -34,8 +37,6 @@ def connection():
     # c = mysql.connection.cursor()
     c = conn.cursor()
     return c, conn
-
-@crossdomain(origin='localhost', headers='Content-Type')
 
 # View to show entries on Flaskr
 @app.route("/")
