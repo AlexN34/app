@@ -16,3 +16,6 @@ deactivate
 
 ## Activate file
 Add 'FLASK_APP=app.py' and 'FLASK_DEBUG=1' to the bottom of the file
+
+## Flask API
+bookswapp.apps.mlux.me
