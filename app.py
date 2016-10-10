@@ -45,15 +45,18 @@ def index():
     /login - show login screen
     /logout - works
     /register - show registration form
+
     /api/user/login -> logs user in; basic function works, needs hashing
     /api/user/register -> Adds a new user to the database
 
-    ========== Not yet confirmed working =============
     /api/user/<userid> -> Retrieves user information
     /api/user/list -> Lists all the users
+
     /api/books/create -> Adds a new book to the database
     /api/books/<bookid> -> Retrieves book information
-    /api/books/list -> Lists all the books"""
+    /api/books/list -> Lists all the books
+
+    /api/listings -> Shows which user owns which book"""
 
     if session.get('logged_in'):
         userid = session['user_id']
@@ -66,15 +69,13 @@ def index():
 def show_login_page():
     return render_template('login.html')
 
-
+""" User login/authentication/session management. """
 @app.route('/api/user/login', methods=['GET', 'POST'])
 def login():
-    """ User login/authentication/session management. """
-    error = "Invalid email/password"
-
     # Should sanitate input and hash password
-    # ...
 
+    error = None
+    
     # Check that email and password fields are not empty
     if request.method == 'POST' and request.form['email'] and \
        request.form['password']:
@@ -98,13 +99,17 @@ def login():
                 session['user_id'] = rv[0]
                 flash("Success: you are now logged in")
                 # Back to list page on success with flash message
-                return redirect(url_for('index'))
+                # return redirect(url_for('index'))
+                return jsonify({
+                    'status': 200, 
+                    'message': 'Login successful',
+                    })
         else:
             error = "Invalid email"
 
+    return login_error(error)
     # Point this to home page with errors if they occurred
-    return render_template('index.html', error=error)
-
+    # return render_template('index.html', error=error)
 
 @app.route('/logout')
 def logout():
@@ -113,7 +118,11 @@ def logout():
     session.pop('logged_in', False)
     session.pop('user_id', None)
     flash('You were logged out')
-    return redirect(url_for('index'))
+    # return redirect(url_for('index'))
+    return jsonify({
+        'status': 200,
+        'message': 'User logout successful',
+        })
 
 
 @app.route('/register')
@@ -123,6 +132,8 @@ def show_registration():
 
 @app.route('/api/user/register', methods=['GET', 'POST'])
 def register():
+    error = None
+
     email = request.form['email']
     password = request.form['password']
     university = request.form.get('university', None)
@@ -134,10 +145,12 @@ def register():
 
     # If the email already exists, throw an error code
     if len(rv) > 0:
-        flash("This email already exists. Please pick a new one")
+        error = "Email already exists"
         c.close()
         con.close()
-        return redirect(url_for('index')), status.HTTP_400_BAD_REQUEST
+        # return redirect(url_for('index')), status.HTTP_400_BAD_REQUEST
+        return registration_error(error)
+
     # Create the user return success status
     else:
         # This format supposedly prevents SQL injections
@@ -147,11 +160,6 @@ def register():
         values = (email, password, university, location)
         c.execute(query, values)
 
-        # q = """
-        #     INSERT INTO User (email, password, university, location) VALUES
-        #     ('{0}', '{1}', '{2}', '{3}')
-        #     """.format(email, password, university, location)
-        # c.execute(q)
         con.commit()
         c.close()
         con.close()
@@ -161,43 +169,47 @@ def register():
         flash(request.form['password'])
         flash(request.form['university'])
         flash(request.form['location'])
-        return redirect(url_for('index')), status.HTTP_201_CREATED
+        # return redirect(url_for('index')), status.HTTP_201_CREATED
+        return jsonify({
+            'status': 201,
+            'message': 'User registration successful',
+            }), status.HTTP_201_CREATED
 
 
 # How will this be specified? TODO: figure out variable routing
 @app.route('/api/user/<userid>')
 def get_user(userid):
     c, con = connection()
-    try:
-        i = c.execute("SELECT * FROM User WHERE user_id = '{0}'".format(userid))
-    except TypeError as e:
-        flash(e)  # show in flash on next load
-        return '', status.HTTP_400_BAD_REQUEST
-
-    if int(i) > 0:
-        values = c.fetchone()
-        c.close()
-        con.close()
-        return jsonify({
-            'User ID': values[0],
-            'Email': values[1],
-            'Password': values[2],
-            'University': values[3],
-            'Location': values[4]
-            }), status.HTTP_200_OK
+    query = ("SELECT * FROM User WHERE user_id = %s")
+    c.execute(query, [userid])
+    rv = c.fetchone()
     c.close()
     con.close()
-    return '', status.HTTP_204_NO_CONTENT
+
+    if rv:
+        return jsonify({
+            'User ID': rv[0],
+            'Email': rv[1],
+            'Password': rv[2],
+            'University': rv[3],
+            'Location': rv[4]
+            })
+
+    return not_found()
 
 # @app.route('/api/user/update/<userid>', methods=['PUT'])
 @app.route('/api/user/update/<userid>', methods=['POST']) # Using POST method for now for easier testing
 def update_user(userid):
+    message = ''
+
     # Check user is logged in
     if not session.get('logged_in'):
-        return 'Error: Not logged in', status.HTTP_400_BAD_REQUEST
+        return not_logged_in()
 
     # Check logged in user is the one being updated
-    if str(userid) == str(session['user_id']):
+    if str(userid) != str(session['user_id']):
+        return not_auth()
+    else:
         c, con = connection()
 
         # Should validate/sanitise fields
@@ -206,32 +218,33 @@ def update_user(userid):
             values = (request.form['email'], userid)
             c.execute(query, values)
             session['email'] = request.form['email']
-            print("Email updated")
+            message += "Email updated\n"
 
         if (request.form['password']):
             query = ("UPDATE User SET password = %s WHERE user_id = %s")
             values = (request.form['password'], userid)
-            c.execute(query, values)            
-            print("Password updated")
+            c.execute(query, values)   
+            message += "Password updated\n"         
 
         if (request.form['university']):
             query = ("UPDATE User SET university = %s WHERE user_id = %s")
             values = (request.form['university'], userid)
             c.execute(query, values) 
-            print("University updated")
+            message += "University updated\n"
 
         if (request.form['location']):
             query = ("UPDATE User SET location = %s WHERE user_id = %s")
             values = (request.form['location'], userid)
             c.execute(query, values) 
-            print("Location updated")
+            message += "Location updated\n"
 
         con.commit()
         c.close()
         con.close()
-        return '', status.HTTP_200_OK
-
-    return 'Error: Unauthorised update', status.HTTP_400_BAD_REQUEST
+        return jsonify({
+            'status': 200,
+            'message': message,
+            })
 
 
 #@app.route('/api/user/delete/<userid>', methods=['DELETE'])
@@ -239,10 +252,12 @@ def update_user(userid):
 def delete_user(userid):
     # Check user is logged in
     if not session.get('logged_in'):
-        return 'Error: Not logged in', status.HTTP_400_BAD_REQUEST
+        return not_logged_in()
 
     # Check logged in user is the one being deleted
-    if str(userid) == str(session['user_id']):
+    if str(userid) != str(session['user_id']):
+        return not_auth()
+    else:
         c, con = connection()
 
         # Delete all book listings under this user 
@@ -266,15 +281,18 @@ def delete_user(userid):
         c.close()
         con.close()
         logout()
-        return '', status.HTTP_200_OK
-
-    return 'Error: Unauthorised deletion', status.HTTP_400_BAD_REQUEST
+        return jsonify({
+            'status': 200,
+            'message': 'User deleted',
+            })
 
 @app.route('/api/user/list')
 def get_userlist():
     c, con = connection()
     c.execute('''SELECT * FROM User''')
     rv = c.fetchall()
+    c.close()
+    con.close()
     finalState = status.HTTP_204_NO_CONTENT
 
     # http://codehandbook.org/working-with-json-in-python-flask/
@@ -288,26 +306,18 @@ def get_userlist():
             'Location': user[4]
         }
         userList.append(userDict)
-
-    c.close()
-    con.close()
+    
     # set status code based on users found
     if len(userList) > 0:
         finalState = status.HTTP_200_OK
     return jsonify(userList), finalState
 
 
+
 @app.route('/api/books/create', methods=['POST'])
 def add_book():
-    # Name/Author/isbn/prescribed_course/
-    # pages*/edition/condition/transaction_type/price/description
-
-    # Need to manage sessions here.
-    # Removed previous session handling because it's not implemented yet.
-    # MUST BE DEFINED
-
     if not session.get('logged_in'):
-        return '', status.HTTP_400_BAD_REQUEST
+        return not_logged_in()
 
     name = request.form['name']
     author = request.form['author']
@@ -317,13 +327,12 @@ def add_book():
     transaction_type = request.form['transaction_type']
     price = request.form['price']
 
-    # OPTION PARAMS
-    status = request.form.get('status', None)
+    # Optional parameters
+    bookStatus = request.form.get('status', None)
     edition = request.form.get('edition', None)
     description = request.form.get('description', None)
     margin = request.form.get('margin', None)
 
-    # How to signal fail - TODO: try except block?
     c, con = connection()
 
     # http://dev.mysql.com/doc/refman/5.7/en/keywords.html
@@ -332,7 +341,7 @@ def add_book():
     query = ("INSERT INTO Book "
     "(name, author, isbn, prescribed_course, edition, `condition`, transaction_type, status, price, margin, description) "
     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
-    values = (name, author, isbn, prescribed_course, edition, condition, transaction_type, status, price, margin, description)
+    values = (name, author, isbn, prescribed_course, edition, condition, transaction_type, bookStatus, price, margin, description)
     c.execute(query, values)
 
     # Mark book listing as belonging to user
@@ -344,22 +353,27 @@ def add_book():
     con.commit()
     c.close()
     con.close()
-    #return '', status.HTTP_201_CREATED
-    return "Book created!" # Still can't return the above line for some reason...
+    return jsonify({
+        'status': 201,
+        'message': 'Book created'
+        }), status.HTTP_201_CREATED
 
 #@app.route('/api/books/delete/<bookid>', methods=['DELETE'])
 @app.route('/api/books/delete/<bookid>') # Using GET method for now for easier testing
 def delete_book(bookid):
     # Check user is logged in, and that they own the associated book listing
     if not session.get('logged_in'):
-        return '', status.HTTP_400_BAD_REQUEST
+        return not_logged_in()
 
     c, con = connection()
     query = ("SELECT * FROM Book_List WHERE book_id = %s")
     c.execute(query, [bookid])
     rv = c.fetchone()
 
-    if rv and (rv[0] == session['user_id']):
+    if (rv[0] != session['user_id']):
+        return not_auth()
+
+    if rv:
         query = ("DELETE FROM Book WHERE book_id = %s")
         c.execute(query, [bookid])
         query = ("DELETE FROM Book_List WHERE book_id = %s")
@@ -367,11 +381,12 @@ def delete_book(bookid):
         con.commit()
         c.close()
         con.close()
-        return '', status.HTTP_200_OK
-        # return "Book deleted"
+        return jsonify({
+            'status': 200,
+            'message': 'Book deleted',
+            })
 
-    return '', status.HTTP_400_BAD_REQUEST
-    # return "Given book_id does not exist"
+    return not_found()
 
 @app.route('/api/books/<bookid>')
 def get_book(bookid):
@@ -400,7 +415,7 @@ def get_book(bookid):
     else:
         c.close()
         con.close()
-        return '', status.HTTP_404_NOT_FOUND
+        return not_found()
 
 
 # Change type depending on which we want the list of: Selling/Wanted/Swap
@@ -436,10 +451,9 @@ def get_booklist(transaction_type):
         }
         bookList.append(bookDict)
 
-    # return json.dumps(userList)
     c.close()
     con.close()
-    return jsonify(bookList), status.HTTP_200_OK
+    return jsonify(bookList)
 
 # Testing purposes
 @app.route('/api/listings')
@@ -459,7 +473,58 @@ def get_listings():
 
     c.close()
     con.close()
-    return jsonify(listings), status.HTTP_200_OK
+    return jsonify(listings)
+
+# Error handlers
+@app.errorhandler(400)
+def registration_error(error):
+    message = {
+        'status': 400,
+        'error': error,
+    }
+    resp = jsonify(message)
+    resp.status_code = 400
+    return resp
+
+@app.errorhandler(401)
+def login_error(error):
+    message = {
+        'status': 401,
+        'error': error,
+    }
+    resp = jsonify(message)
+    resp.status_code = 401
+    return resp
+
+@app.errorhandler(401)
+def not_logged_in():
+    message = {
+        'status': 401,
+        'error': 'Not logged in',
+    }
+    resp = jsonify(message)
+    resp.status_code = 401
+    return resp
+
+@app.errorhandler(403)
+def not_auth():
+    message = {
+        'status': 403,
+        'error': 'Logged in but probably attempting to do something with another user id'
+    }
+    resp = jsonify(message)
+    resp.status_code = 403
+    return resp
+
+@app.errorhandler(404)
+def not_found():
+    message = {
+        'status': 404,
+        'error': 'Not found: ' + request.url,
+    }
+    resp = jsonify(message)
+    resp.status_code = 404
+    return resp
 
 # @app.route('/test')
 # def testJson():
