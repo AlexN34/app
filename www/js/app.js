@@ -50,6 +50,7 @@ bookSwapp.controller('homeCtrl', ['$scope', '$http',
 			url: 'http://bookswapp.apps.mlux.me/api/user/list'
 		}).then(function successCallback(response) {
 			$scope.users = response.data;
+			console.log(response.data);
 		}, function errorCallback(response) {
 			console.log('Errored out: ' + JSON.stringify(response));
 		});

@@ -89,10 +89,10 @@
       </thead>
       <tbody>
         <tr ng-repeat="user in users">
-          <td>{{ user['user_id'] }}</td>
+          <td><a href="http://bookswapp.apps.mlux.me/api/user/{{ user['user_id'] }}">{{ user['user_id'] }}</a></td>
           <td>{{ user['email'] }}</td>
-          <td>${{ user['password'] | number : 2 }}</td>
-          <td>{{ user['universty'] }}</td>
+          <td>{{ user['password'] }}</td>
+          <td>{{ user['university'] }}</td>
           <td>{{ user['location'] }}</td>
         </tr>
       </tbody>
