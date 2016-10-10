@@ -44,6 +44,16 @@ bookSwapp.controller('homeCtrl', ['$scope', '$http',
 			console.log('Errored out: ' + JSON.stringify(response));
 		});
 
+		// Getting list of users
+		$http({
+			method: 'GET',
+			url: 'http://bookswapp.apps.mlux.me/api/user/list'
+		}).then(function successCallback(response) {
+			$scope.users = response.data;
+		}, function errorCallback(response) {
+			console.log('Errored out: ' + JSON.stringify(response));
+		});
+
 		$scope.selectedType = 'selling';
 
 		$scope.selectType = function(type) {

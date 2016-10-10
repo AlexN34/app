@@ -67,11 +67,33 @@
       </thead>
       <tbody>
         <tr ng-repeat="listing in listings">
-          <td>{{ listing['Book ID'] }}</td>
-          <td>{{ listing['Name'] }}</td>
-          <td>${{ listing['Price'] | number : 2 }}</td>
-          <td>{{ listing['Status'] }}</td>
-          <td>{{ listing['Transaction type'] }}</td>
+          <td>{{ listing['book_id'] }}</td>
+          <td>{{ listing['name'] }}</td>
+          <td>${{ listing['price'] | number : 2 }}</td>
+          <td>{{ listing['status'] }}</td>
+          <td>{{ listing['trans_type'] }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Table of all users -->
+    <table class="table table-bordered table-hover">
+      <thead class="table-head">
+        <tr>
+          <td>#</td>
+          <td>Email</td>
+          <td>Password</td>
+          <td>University</td>
+          <td>Location</td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="user in users">
+          <td>{{ user['user_id'] }}</td>
+          <td>{{ user['email'] }}</td>
+          <td>${{ user['password'] | number : 2 }}</td>
+          <td>{{ user['universty'] }}</td>
+          <td>{{ user['location'] }}</td>
         </tr>
       </tbody>
     </table>

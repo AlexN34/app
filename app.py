@@ -299,11 +299,11 @@ def get_userlist():
     userList = []
     for user in rv:
         userDict = {
-            'User ID': user[0],
-            'Email': user[1],
-            'Password': user[2],
-            'University': user[3],
-            'Location': user[4]
+            'user_id': user[0],
+            'email': user[1],
+            'password': user[2],
+            'university': user[3],
+            'location': user[4]
         }
         userList.append(userDict)
     
@@ -436,18 +436,18 @@ def get_booklist(transaction_type):
     bookList = []
     for book in rv:
         bookDict = {
-            'Book ID': book[0],
-            'Name': book[1],
-            'Author': book[2],
-            'ISBN': book[3],
-            'Prescribed Course': book[4],
-            'Edition': book[5],
-            'Condition': book[6],
-            'Transaction type': book[7],
-            'Status': book[8],
-            'Price': float(book[9]), # Decimal is not JSON serializable error otherwise
-            'Margin': float(book[10]), # Decimal is not JSON serializable error otherwise
-            'Description': book[11],
+            'book_id': book[0],
+            'name': book[1],
+            'author': book[2],
+            'isbn': book[3],
+            'course': book[4],
+            'edition': book[5],
+            'condition': book[6],
+            'trans_type': book[7],
+            'status': book[8],
+            'price': float(book[9]), # Decimal is not JSON serializable error otherwise
+            'margin': float(book[10]), # Decimal is not JSON serializable error otherwise
+            'description': book[11],
         }
         bookList.append(bookDict)
 
