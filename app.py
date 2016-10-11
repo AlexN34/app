@@ -5,6 +5,7 @@ from flask import Flask, request, session, redirect, \
 # abort
 from flask_api import status
 from flask_cors import CORS, cross_origin
+import time
 
 # from flask_mysqldb import MySQL
 # import collections
@@ -62,6 +63,11 @@ def index():
         userid = session['user_id']
     else:
         userid = 0
+
+        # Random login details while testing front-end
+        session['logged_in'] = True
+        session['user_id'] = 33
+        session['email'] = "bread@gmail.com"
     return render_template('index.html', todo=todo, userid=userid)
 
 
@@ -192,7 +198,7 @@ def get_user(userid):
             'Email': rv[1],
             'Password': rv[2],
             'University': rv[3],
-            'Location': rv[4]
+            'Location': rv[4],
             })
 
     return not_found()
@@ -316,15 +322,15 @@ def get_userlist():
 
 @app.route('/api/books/create', methods=['POST'])
 def add_book():
-    if not session.get('logged_in'):
-        return not_logged_in()
+    # if not session.get('logged_in'):
+    #     return not_logged_in()
 
     name = request.form['name']
     author = request.form['author']
     isbn = request.form['isbn']
     prescribed_course = request.form['prescribed_course']
     condition = request.form['condition']
-    transaction_type = request.form['transaction_type']
+    transaction_type = request.form['transaction']
     price = request.form['price']
 
     # Optional parameters
@@ -334,7 +340,6 @@ def add_book():
     margin = request.form.get('margin', None)
 
     c, con = connection()
-
     # http://dev.mysql.com/doc/refman/5.7/en/keywords.html
     # 'condition' is a reserved keyboard, have to put it in backticks according to
     # http://stackoverflow.com/questions/21046293/error-in-sql-syntax-for-python-and-mysql-on-insert-operation
@@ -346,17 +351,18 @@ def add_book():
 
     # Mark book listing as belonging to user
     book_id = c.lastrowid # Get the id of the newly inserted book
-    query = ("INSERT INTO Book_List (user_id, book_id) VALUES (%s, %s)")
-    values = (session['user_id'], book_id)
+    query = ("INSERT INTO Book_List (user_id, book_id, `date`) VALUES (%s, %s, %s)")
+    print(time.strftime('%Y-%m-%d %H:%M:%S'))
+    values = (session['user_id'], book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
     c.execute(query, values)
 
     con.commit()
     c.close()
     con.close()
     return jsonify({
-        'status': 201,
-        'message': 'Book created'
-        }), status.HTTP_201_CREATED
+        'status': 200,
+        'message': 'Book created',
+        }), status.HTTP_200_CREATED
 
 #@app.route('/api/books/delete/<bookid>', methods=['DELETE'])
 @app.route('/api/books/delete/<bookid>') # Using GET method for now for easier testing
@@ -467,7 +473,7 @@ def get_listings():
     for item in rv:
         listingDict = {
             'user_id': item[0],
-            'book_id': item[1]
+            'book_id': item[1],
         }
         listings.append(listingDict)
 
@@ -510,7 +516,7 @@ def not_logged_in():
 def not_auth():
     message = {
         'status': 403,
-        'error': 'Logged in but probably attempting to do something with another user id'
+        'error': 'Logged in but probably attempting to do something with another user id',
     }
     resp = jsonify(message)
     resp.status_code = 403
