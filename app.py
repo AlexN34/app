@@ -56,6 +56,7 @@ def index():
     /api/books/create -> Adds a new book to the database
     /api/books/<bookid> -> Retrieves book information
     /api/books/list -> Lists all the books
+    /api/books/search/<query> -> returns all results that any field matches query
 
     /api/listings -> Shows which user owns which book"""
 
@@ -426,6 +427,40 @@ def get_book(bookid):
         con.close()
         return not_found()
 
+@app.route('/api/books/search/<query>')
+def book_search(query):
+    c, con = connection()
+    search_string = '\'%' + query + '%\''
+   # values = (search_string, search_string, search_string, search_string)
+    q = ("SELECT * FROM Book WHERE (name LIKE {0} OR author LIKE {1} OR isbn LIKE {2} OR prescribed_course LIKE {3})").format(search_string, search_string, search_string, search_string)
+    c.execute(q)
+    rv = c.fetchall()
+
+    c.close()
+    con.close()
+    finalState = status.HTTP_204_NO_CONTENT
+    # http://codehandbook.org/working-with-json-in-python-flask/
+    bookList = []
+    for book in rv:
+        bookDict = {
+            'book_id': book[0],
+            'name': book[1],
+            'author': book[2],
+            'isbn': book[3],
+            'course': book[4],
+            'edition': book[5],
+            'condition': book[6],
+            'trans_type': book[7],
+            'status': book[8],
+            'price': float(book[9]), # Decimal is not JSON serializable error otherwise
+            'margin': float(book[10]), # Decimal is not JSON serializable error otherwise
+            'description': book[11],
+        }
+        bookList.append(bookDict)
+
+    if len(bookList) > 0:
+        finalState = status.HTTP_200_OK
+    return jsonify(bookList), finalState
 
 # Change type depending on which we want the list of: Selling/Wanted/Swap
 # transaction_type = sell, buy, swap or all
