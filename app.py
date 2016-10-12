@@ -257,40 +257,40 @@ def update_user(userid):
 @app.route('/api/user/delete/<userid>') # Using GET method for now for easier testing
 def delete_user(userid):
     # Check user is logged in
-    if not session.get('logged_in'):
-        return not_logged_in()
+    # if not session.get('logged_in'):
+    #     return not_logged_in()
 
-    # Check logged in user is the one being deleted
-    if str(userid) != str(session['user_id']):
-        return not_auth()
-    else:
-        c, con = connection()
+    # # Check logged in user is the one being deleted
+    # if str(userid) != str(session['user_id']):
+    #     return not_auth()
 
-        # Delete all book listings under this user 
-        query = ("SELECT * FROM Book_List WHERE user_id = %s")
-        c.execute(query, [userid])
-        rv = c.fetchall()
+    c, con = connection()
 
-        for listing in rv:
-            bookid = listing[1]
-            query = ("DELETE FROM Book WHERE book_id = %s")
-            c.execute(query, [bookid])
+    # Delete all book listings under this user 
+    query = ("SELECT * FROM Book_List WHERE user_id = %s")
+    c.execute(query, [userid])
+    rv = c.fetchall()
 
-        query = ("DELETE FROM Book_List WHERE user_id = %s")
-        c.execute(query, [userid])
+    for listing in rv:
+        bookid = listing[1]
+        query = ("DELETE FROM Book WHERE book_id = %s")
+        c.execute(query, [bookid])
 
-        # Delete the account itself
-        query = ("DELETE FROM User WHERE user_id = %s")
-        c.execute(query, [userid])
+    query = ("DELETE FROM Book_List WHERE user_id = %s")
+    c.execute(query, [userid])
 
-        con.commit()
-        c.close()
-        con.close()
-        logout()
-        return jsonify({
-            'status': 200,
-            'message': 'User deleted',
-            })
+    # Delete the account itself
+    query = ("DELETE FROM User WHERE user_id = %s")
+    c.execute(query, [userid])
+
+    con.commit()
+    c.close()
+    con.close()
+    logout()
+    return jsonify({
+        'status': 200,
+        'message': 'User deleted',
+        })
 
 @app.route('/api/user/list')
 def get_userlist():
@@ -324,6 +324,7 @@ def get_userlist():
 def add_book():
     # if not session.get('logged_in'):
     #     return not_logged_in()
+    index()
 
     name = request.form['name']
     author = request.form['author']
@@ -353,31 +354,33 @@ def add_book():
     book_id = c.lastrowid # Get the id of the newly inserted book
     query = ("INSERT INTO Book_List (user_id, book_id, `date`) VALUES (%s, %s, %s)")
     print(time.strftime('%Y-%m-%d %H:%M:%S'))
-    values = (session['user_id'], book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
+    # values = (session['user_id'], book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
+    values = (1, book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
+
     c.execute(query, values)
 
     con.commit()
     c.close()
     con.close()
     return jsonify({
-        'status': 200,
+        'status': 201,
         'message': 'Book created',
-        }), status.HTTP_200_CREATED
+        }), status.HTTP_201_CREATED
 
 #@app.route('/api/books/delete/<bookid>', methods=['DELETE'])
 @app.route('/api/books/delete/<bookid>') # Using GET method for now for easier testing
 def delete_book(bookid):
     # Check user is logged in, and that they own the associated book listing
-    if not session.get('logged_in'):
-        return not_logged_in()
+    # if not session.get('logged_in'):
+    #     return not_logged_in()
 
     c, con = connection()
     query = ("SELECT * FROM Book_List WHERE book_id = %s")
     c.execute(query, [bookid])
     rv = c.fetchone()
 
-    if (rv[0] != session['user_id']):
-        return not_auth()
+    # if (rv[0] != session['user_id']):
+    #     return not_auth()
 
     if rv:
         query = ("DELETE FROM Book WHERE book_id = %s")
