@@ -216,30 +216,34 @@ def update_user(userid):
     # # Check logged in user is the one being updated
     # if str(userid) != str(session['user_id']):
     #     return not_auth()
-        
+
     c, con = connection()
 
     # Should validate/sanitise fields
-    if (request.form['email']):
+    # if (request.form['email']):
+    if ('email' in request.form):
         query = ("UPDATE User SET email = %s WHERE user_id = %s")
         values = (request.form['email'], userid)
         c.execute(query, values)
         session['email'] = request.form['email']
         message += "Email updated\n"
 
-    if (request.form['password']):
+    # if (request.form['password']):
+    if ('password' in request.form):
         query = ("UPDATE User SET password = %s WHERE user_id = %s")
         values = (request.form['password'], userid)
         c.execute(query, values)   
         message += "Password updated\n"         
 
-    if (request.form['university']):
+    # if (request.form['university']):
+    if ('university' in request.form):
         query = ("UPDATE User SET university = %s WHERE user_id = %s")
         values = (request.form['university'], userid)
         c.execute(query, values) 
         message += "University updated\n"
 
-    if (request.form['location']):
+    # if (request.form['location']):
+    if ('location' in request.form):
         query = ("UPDATE User SET location = %s WHERE user_id = %s")
         values = (request.form['location'], userid)
         c.execute(query, values) 
