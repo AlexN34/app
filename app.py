@@ -110,6 +110,8 @@ def login():
                 return jsonify({
                     'status': 200, 
                     'message': 'Login successful',
+                    'user_id': rv[0],
+                    'email': request.form['email'],
                     })
         else:
             error = "Invalid email"
