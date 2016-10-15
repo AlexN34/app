@@ -197,11 +197,11 @@ def get_user(userid):
 
     if rv:
         return jsonify({
-            'User ID': rv[0],
-            'Email': rv[1],
-            'Password': rv[2],
-            'University': rv[3],
-            'Location': rv[4],
+            'user_id': rv[0],
+            'email': rv[1],
+            'password': rv[2],
+            'university': rv[3],
+            'location': rv[4],
             })
 
     return not_found()
@@ -415,18 +415,18 @@ def get_book(bookid):
         c.close()
         con.close()
         return jsonify({
-            'Book ID': rv[0],
-            'Name': rv[1],
-            'Author': rv[2],
-            'ISBN': rv[3],
-            'Prescribed Course': rv[4],
-            'Edition': rv[5],
-            'Condition': rv[6],
-            'Transaction type': rv[7],
-            'Status': rv[8],
-            'Price': float(rv[9]), # Decimal is not JSON serializable error otherwise
-            'Margin': float(rv[10]), # Decimal is not JSON serializable error otherwise
-            'Description': rv[11],
+            'book_id': rv[0],
+            'name': rv[1],
+            'author': rv[2],
+            'isbn': rv[3],
+            'course': rv[4],
+            'edition': rv[5],
+            'condition': rv[6],
+            'trans_type': rv[7],
+            'status': rv[8],
+            'price': float(rv[9]), # Decimal is not JSON serializable error otherwise
+            'margin': float(rv[10]), # Decimal is not JSON serializable error otherwise
+            'description': rv[11],
             }), status.HTTP_200_OK
     else:
         c.close()
