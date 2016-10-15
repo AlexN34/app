@@ -516,8 +516,10 @@ def get_listings():
     listings = []
     for item in rv:
         listingDict = {
-            'user_id': item[0],
-            'book_id': item[1],
+            'listing_id': item[0],
+            'user_id': item[1],
+            'book_id': item[2],
+            'date': item[3],
         }
         listings.append(listingDict)
 
