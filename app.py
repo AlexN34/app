@@ -209,49 +209,49 @@ def get_user(userid):
 def update_user(userid):
     message = ''
 
-    # Check user is logged in
-    if not session.get('logged_in'):
-        return not_logged_in()
+    # # Check user is logged in
+    # if not session.get('logged_in'):
+    #     return not_logged_in()
 
-    # Check logged in user is the one being updated
-    if str(userid) != str(session['user_id']):
-        return not_auth()
-    else:
-        c, con = connection()
+    # # Check logged in user is the one being updated
+    # if str(userid) != str(session['user_id']):
+    #     return not_auth()
+        
+    c, con = connection()
 
-        # Should validate/sanitise fields
-        if (request.form['email']):
-            query = ("UPDATE User SET email = %s WHERE user_id = %s")
-            values = (request.form['email'], userid)
-            c.execute(query, values)
-            session['email'] = request.form['email']
-            message += "Email updated\n"
+    # Should validate/sanitise fields
+    if (request.form['email']):
+        query = ("UPDATE User SET email = %s WHERE user_id = %s")
+        values = (request.form['email'], userid)
+        c.execute(query, values)
+        session['email'] = request.form['email']
+        message += "Email updated\n"
 
-        if (request.form['password']):
-            query = ("UPDATE User SET password = %s WHERE user_id = %s")
-            values = (request.form['password'], userid)
-            c.execute(query, values)   
-            message += "Password updated\n"         
+    if (request.form['password']):
+        query = ("UPDATE User SET password = %s WHERE user_id = %s")
+        values = (request.form['password'], userid)
+        c.execute(query, values)   
+        message += "Password updated\n"         
 
-        if (request.form['university']):
-            query = ("UPDATE User SET university = %s WHERE user_id = %s")
-            values = (request.form['university'], userid)
-            c.execute(query, values) 
-            message += "University updated\n"
+    if (request.form['university']):
+        query = ("UPDATE User SET university = %s WHERE user_id = %s")
+        values = (request.form['university'], userid)
+        c.execute(query, values) 
+        message += "University updated\n"
 
-        if (request.form['location']):
-            query = ("UPDATE User SET location = %s WHERE user_id = %s")
-            values = (request.form['location'], userid)
-            c.execute(query, values) 
-            message += "Location updated\n"
+    if (request.form['location']):
+        query = ("UPDATE User SET location = %s WHERE user_id = %s")
+        values = (request.form['location'], userid)
+        c.execute(query, values) 
+        message += "Location updated\n"
 
-        con.commit()
-        c.close()
-        con.close()
-        return jsonify({
-            'status': 200,
-            'message': message,
-            })
+    con.commit()
+    c.close()
+    con.close()
+    return jsonify({
+        'status': 200,
+        'message': message,
+        })
 
 
 #@app.route('/api/user/delete/<userid>', methods=['DELETE'])
@@ -520,7 +520,7 @@ def get_listings():
     return jsonify(listings)
 
 # Error handlers
-@app.errorhandler(400)
+# @app.errorhandler(400)
 def registration_error(error):
     message = {
         'status': 400,
@@ -530,7 +530,7 @@ def registration_error(error):
     resp.status_code = 400
     return resp
 
-@app.errorhandler(401)
+# @app.errorhandler(401)
 def login_error(error):
     message = {
         'status': 401,
@@ -540,7 +540,7 @@ def login_error(error):
     resp.status_code = 401
     return resp
 
-@app.errorhandler(401)
+# @app.errorhandler(401)
 def not_logged_in():
     message = {
         'status': 401,
@@ -550,7 +550,7 @@ def not_logged_in():
     resp.status_code = 401
     return resp
 
-@app.errorhandler(403)
+# @app.errorhandler(403)
 def not_auth():
     message = {
         'status': 403,
@@ -560,7 +560,7 @@ def not_auth():
     resp.status_code = 403
     return resp
 
-@app.errorhandler(404)
+# @app.errorhandler(404)
 def not_found():
     message = {
         'status': 404,
