@@ -6,6 +6,8 @@ from flask import Flask, request, session, redirect, \
 from flask_api import status
 from flask_cors import CORS, cross_origin
 import time
+from itsdangerous import (TimedJSONWebSignatureSerializer
+                          as Serializer, BadSignature, SignatureExpired)
 
 # from flask_mysqldb import MySQL
 # import collections
@@ -98,10 +100,11 @@ def login():
             if request.form['password'] != rv[2]:
                 error = "Invalid password"
             else:
-                session['email'] = request.form['email']
-                session['logged_in'] = True
-                session['user_id'] = rv[0]
-                flash("Success: you are now logged in")
+                token = generate_auth_token(rv[0])
+                # session['email'] = request.form['email']
+                # session['logged_in'] = True
+                # session['user_id'] = rv[0]
+                # flash("Success: you are now logged in")
                 # Back to list page on success with flash message
                 # return redirect(url_for('index'))
                 return jsonify({
@@ -109,6 +112,7 @@ def login():
                     'message': 'Login successful',
                     'user_id': rv[0],
                     'email': request.form['email'],
+                    'token': token.decode('ascii'),
                     })
         else:
             error = "Invalid email"
@@ -217,6 +221,15 @@ def update_user(userid):
     # # Check logged in user is the one being updated
     # if str(userid) != str(session['user_id']):
     #     return not_auth()
+
+    # Check user is logged in (has a valid token)
+    if not verify_auth_token(request.form['token']):
+        return not_logged_in()
+
+    # Check the user being updated is the same as the logged in user from the token
+    if (userid != verify_auth_token(request.form['token'])):
+        return not_auth()
+
 
     c, con = connection()
 
@@ -577,6 +590,22 @@ def request_book(book_id):
     else:
         return not_found()
 
+# https://blog.miguelgrinberg.com/post/restful-authentication-with-flask
+# Generates a token with the user_id as data and an expiration time of 10 minutes
+def generate_auth_token(user_id, expiration = 600):
+    s = Serializer(app.secret_key, expires_in = expiration)
+    returns s.dumps({ 'user_id': user_id })
+
+# Verifies the token is valid and not expired, and returns the user_id 
+def verify_auth_token(token):
+    s = Serializer(app.secret_key)
+    try:
+        data = s.loads(token)
+    except SignatureExpired:
+        return None
+    except BadSignature: 
+        return None
+    return data['user_id']
 
 # Error handlers
 # @app.errorhandler(400)
