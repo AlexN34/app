@@ -283,7 +283,7 @@ def delete_user(userid):
     # # Check logged in user is the one being deleted
     # if str(userid) != str(session['user_id']):
     #     return not_auth()
-    
+
     # Check user is logged in (has a valid token)
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
@@ -300,7 +300,7 @@ def delete_user(userid):
     rv = c.fetchall()
 
     for listing in rv:
-        bookid = listing[1]
+        bookid = listing[2]
         query = ("DELETE FROM Book WHERE book_id = %s")
         c.execute(query, [bookid])
 
@@ -427,7 +427,7 @@ def delete_book(bookid):
 
     if rv:
         # Check the user being updated is the same as the logged in user from the token
-        if (str(rv[0]) != str(verify_auth_token(request.form['token']))):
+        if (str(rv[1]) != str(verify_auth_token(request.form['token']))):
             return not_auth()
 
         query = ("DELETE FROM Book WHERE book_id = %s")
