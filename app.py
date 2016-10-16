@@ -28,6 +28,7 @@ app.secret_key = os.urandom(24)
 # allow cross origin requests
 CORS(app)
 
+
 def connection():
     # mysql object holds credentials, use it to connect to db
     # conn = mysql.connection()
@@ -39,7 +40,7 @@ def connection():
     c = conn.cursor()
     return c, conn
 
-# View to show entries on Flaskr
+
 @app.route("/")
 def index():
     todo = """Current API:
@@ -56,7 +57,7 @@ def index():
     /api/books/create -> Adds a new book to the database
     /api/books/<bookid> -> Retrieves book information
     /api/books/list -> Lists all the books
-    /api/books/search/<query> -> returns all results that any field matches query
+    /api/books/search/<query> -> returns all results that any field matches
 
     /api/listings -> Shows which user owns which book"""
 
@@ -72,17 +73,13 @@ def index():
     return render_template('index.html', todo=todo, userid=userid)
 
 
-@app.route('/login')
-def show_login_page():
-    return render_template('login.html')
-
-""" User login/authentication/session management. """
+# User login/authentication/session management.
 @app.route('/api/user/login', methods=['GET', 'POST'])
 def login():
     # Should sanitate input and hash password
 
     error = None
-    
+
     # Check that email and password fields are not empty
     if request.method == 'POST' and request.form['email'] and \
        request.form['password']:
@@ -108,7 +105,7 @@ def login():
                 # Back to list page on success with flash message
                 # return redirect(url_for('index'))
                 return jsonify({
-                    'status': 200, 
+                    'status': 200,
                     'message': 'Login successful',
                     'user_id': rv[0],
                     'email': request.form['email'],
@@ -119,6 +116,7 @@ def login():
     return login_error(error)
     # Point this to home page with errors if they occurred
     # return render_template('index.html', error=error)
+
 
 @app.route('/logout')
 def logout():
@@ -164,8 +162,8 @@ def register():
     else:
         # This format supposedly prevents SQL injections
         query = ("INSERT INTO User "
-        "(email, password, university, location) "
-        "VALUES (%s, %s, %s, %s)")
+                 "(email, password, university, location) "
+                 "VALUES (%s, %s, %s, %s)")
         values = (email, password, university, location)
         c.execute(query, values)
 
@@ -185,7 +183,6 @@ def register():
             }), status.HTTP_201_CREATED
 
 
-# How will this be specified? TODO: figure out variable routing
 @app.route('/api/user/<userid>')
 def get_user(userid):
     c, con = connection()
@@ -206,8 +203,10 @@ def get_user(userid):
 
     return not_found()
 
+
 # @app.route('/api/user/update/<userid>', methods=['PUT'])
-@app.route('/api/user/update/<userid>', methods=['POST']) # Using POST method for now for easier testing
+# Using POST method for now for easier testing
+@app.route('/api/user/update/<userid>', methods=['POST'])
 def update_user(userid):
     message = ''
 
@@ -234,21 +233,21 @@ def update_user(userid):
     if ('password' in request.form):
         query = ("UPDATE User SET password = %s WHERE user_id = %s")
         values = (request.form['password'], userid)
-        c.execute(query, values)   
-        message += "Password updated\n"         
+        c.execute(query, values)
+        message += "Password updated\n"
 
     # if (request.form['university']):
     if ('university' in request.form):
         query = ("UPDATE User SET university = %s WHERE user_id = %s")
         values = (request.form['university'], userid)
-        c.execute(query, values) 
+        c.execute(query, values)
         message += "University updated\n"
 
     # if (request.form['location']):
     if ('location' in request.form):
         query = ("UPDATE User SET location = %s WHERE user_id = %s")
         values = (request.form['location'], userid)
-        c.execute(query, values) 
+        c.execute(query, values)
         message += "Location updated\n"
 
     con.commit()
@@ -260,8 +259,9 @@ def update_user(userid):
         })
 
 
-#@app.route('/api/user/delete/<userid>', methods=['DELETE'])
-@app.route('/api/user/delete/<userid>') # Using GET method for now for easier testing
+# @app.route('/api/user/delete/<userid>', methods=['DELETE'])
+# Using GET method for now for easier testing
+@app.route('/api/user/delete/<userid>')
 def delete_user(userid):
     # Check user is logged in
     # if not session.get('logged_in'):
@@ -273,7 +273,7 @@ def delete_user(userid):
 
     c, con = connection()
 
-    # Delete all book listings under this user 
+    # Delete all book listings under this user
     query = ("SELECT * FROM Book_List WHERE user_id = %s")
     c.execute(query, [userid])
     rv = c.fetchall()
@@ -299,6 +299,7 @@ def delete_user(userid):
         'message': 'User deleted',
         })
 
+
 @app.route('/api/user/list')
 def get_userlist():
     c, con = connection()
@@ -319,12 +320,11 @@ def get_userlist():
             'location': user[4]
         }
         userList.append(userDict)
-    
+
     # set status code based on users found
     if len(userList) > 0:
         finalState = status.HTTP_200_OK
     return jsonify(userList), finalState
-
 
 
 @app.route('/api/books/create', methods=['POST'])
@@ -349,17 +349,21 @@ def add_book():
 
     c, con = connection()
     # http://dev.mysql.com/doc/refman/5.7/en/keywords.html
-    # 'condition' is a reserved keyboard, have to put it in backticks according to
-    # http://stackoverflow.com/questions/21046293/error-in-sql-syntax-for-python-and-mysql-on-insert-operation
+    # 'condition' is a reserved keyboard, have to put it in backticks
+    # http://stackoverflow.com/questions/21046293/
+    # error-in-sql-syntax-for-python-and-mysql-on-insert-operation
     query = ("INSERT INTO Book "
-    "(name, author, isbn, prescribed_course, edition, `condition`, transaction_type, status, price, margin, description) "
-    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
-    values = (name, author, isbn, prescribed_course, edition, condition, transaction_type, bookStatus, price, margin, description)
+             "(name, author, isbn, prescribed_course, edition, `condition`, "
+             "transaction_type, status, price, margin, description) "
+             "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+    values = (name, author, isbn, prescribed_course, edition, condition,
+              transaction_type, bookStatus, price, margin, description)
     c.execute(query, values)
 
     # Mark book listing as belonging to user
-    book_id = c.lastrowid # Get the id of the newly inserted book
-    query = ("INSERT INTO Book_List (user_id, book_id, `date`) VALUES (%s, %s, %s)")
+    book_id = c.lastrowid  # Get the id of the newly inserted book
+    query = ("INSERT INTO Book_List (user_id, book_id, `date`)"
+             "VALUES (%s, %s, %s)")
     print(time.strftime('%Y-%m-%d %H:%M:%S'))
     # values = (session['user_id'], book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
     values = (1, book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
@@ -374,8 +378,10 @@ def add_book():
         'message': 'Book created',
         }), status.HTTP_201_CREATED
 
-#@app.route('/api/books/delete/<bookid>', methods=['DELETE'])
-@app.route('/api/books/delete/<bookid>') # Using GET method for now for easier testing
+
+# @app.route('/api/books/delete/<bookid>', methods=['DELETE'])
+# Using GET method for now for easier testing
+@app.route('/api/books/delete/<bookid>')
 def delete_book(bookid):
     # Check user is logged in, and that they own the associated book listing
     # if not session.get('logged_in'):
@@ -404,6 +410,7 @@ def delete_book(bookid):
 
     return not_found()
 
+
 @app.route('/api/books/<bookid>')
 def get_book(bookid):
     c, con = connection()
@@ -424,8 +431,9 @@ def get_book(bookid):
             'condition': rv[6],
             'trans_type': rv[7],
             'status': rv[8],
-            'price': float(rv[9]), # Decimal is not JSON serializable error otherwise
-            'margin': float(rv[10]), # Decimal is not JSON serializable error otherwise
+            # Decimal is not JSON serializable error otherwise (below 2)
+            'price': float(rv[9]),
+            'margin': float(rv[10]),
             'description': rv[11],
             }), status.HTTP_200_OK
     else:
@@ -433,12 +441,17 @@ def get_book(bookid):
         con.close()
         return not_found()
 
+
 @app.route('/api/books/search/<query>')
 def book_search(query):
     c, con = connection()
     search_string = '\'%' + query + '%\''
-   # values = (search_string, search_string, search_string, search_string)
-    q = ("SELECT * FROM Book WHERE (name LIKE {0} OR author LIKE {1} OR isbn LIKE {2} OR prescribed_course LIKE {3})").format(search_string, search_string, search_string, search_string)
+    # values = (search_string, search_string, search_string, search_string)
+    q = ("SELECT * FROM Book WHERE (name LIKE {0} OR author LIKE {1} "
+         "OR isbn LIKE {2} "
+         "OR prescribed_course LIKE {3})").format(search_string,
+                                                  search_string,
+                                                  search_string, search_string)
     c.execute(q)
     rv = c.fetchall()
 
@@ -458,8 +471,9 @@ def book_search(query):
             'condition': book[6],
             'trans_type': book[7],
             'status': book[8],
-            'price': float(book[9]), # Decimal is not JSON serializable error otherwise
-            'margin': float(book[10]), # Decimal is not JSON serializable error otherwise
+            # Decimal is not JSON serializable error otherwise
+            'price': float(book[9]),
+            'margin': float(book[10]),
             'description': book[11],
         }
         bookList.append(bookDict)
@@ -467,6 +481,7 @@ def book_search(query):
     if len(bookList) > 0:
         finalState = status.HTTP_200_OK
     return jsonify(bookList), finalState
+
 
 # Change type depending on which we want the list of: Selling/Wanted/Swap
 # transaction_type = sell, buy, swap or all
@@ -495,8 +510,9 @@ def get_booklist(transaction_type):
             'condition': book[6],
             'trans_type': book[7],
             'status': book[8],
-            'price': float(book[9]), # Decimal is not JSON serializable error otherwise
-            'margin': float(book[10]), # Decimal is not JSON serializable error otherwise
+            # Decimal is not JSON serializable error otherwise below
+            'price': float(book[9]),
+            'margin': float(book[10]),
             'description': book[11],
         }
         bookList.append(bookDict)
@@ -504,6 +520,7 @@ def get_booklist(transaction_type):
     c.close()
     con.close()
     return jsonify(bookList)
+
 
 # Testing purposes
 @app.route('/api/listings')
@@ -527,6 +544,40 @@ def get_listings():
     con.close()
     return jsonify(listings)
 
+
+@app.route('/api/request/<book_id>')
+def request_book(book_id):
+    # TODO how to retrieve requesting user? Assume retrieving from a form
+    buying_user_id = request.form['buying_user_id']
+    price = request.form['price']
+    request_status = "Pending"
+    c, con = connection()
+    query = ("SELECT * FROM Book_List WHERE book_id = %s" % (book_id))
+    c.execute(query)
+    rv = c.fetchall()
+    if rv:
+        selling_user_id = rv[0][1]  # TODO make cleaner
+        query = ("INSERT INTO Transaction_List "
+                 "(buying_user_id, selling_user_id, price, status)"
+                 "VALUES (%s, %s, %s, %s)")
+        values = (buying_user_id, selling_user_id, price, request_status)
+        c.execute(query, values)
+
+        """ Does Transaction List need to know book ID/transaction? how to match
+            Notification with Transaction List to retrieve price? """
+        query = ("INSERT INTO Notification "
+                 "(user_id, book_id)"
+                 "VALUES (%s, %s)")
+        values = (selling_user_id, book_id)
+        c.execute(query, values)
+        con.commit()
+        c.close()
+        con.close()
+
+    else:
+        return not_found()
+
+
 # Error handlers
 # @app.errorhandler(400)
 def registration_error(error):
@@ -538,6 +589,7 @@ def registration_error(error):
     resp.status_code = 400
     return resp
 
+
 # @app.errorhandler(401)
 def login_error(error):
     message = {
@@ -547,6 +599,7 @@ def login_error(error):
     resp = jsonify(message)
     resp.status_code = 401
     return resp
+
 
 # @app.errorhandler(401)
 def not_logged_in():
@@ -558,15 +611,18 @@ def not_logged_in():
     resp.status_code = 401
     return resp
 
+
 # @app.errorhandler(403)
 def not_auth():
     message = {
         'status': 403,
-        'error': 'Logged in but probably attempting to do something with another user id',
+        'error': 'Logged in but probably '
+                 'attempting to do something with another user id',
     }
     resp = jsonify(message)
     resp.status_code = 403
     return resp
+
 
 # @app.errorhandler(404)
 def not_found():
