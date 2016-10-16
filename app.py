@@ -227,7 +227,7 @@ def update_user(userid):
         return not_logged_in()
 
     # Check the user being updated is the same as the logged in user from the token
-    if (userid != verify_auth_token(request.form['token'])):
+    if (str(userid) != str(verify_auth_token(request.form['token']))):
         return not_auth()
 
 
