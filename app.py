@@ -274,7 +274,7 @@ def update_user(userid):
 
 # @app.route('/api/user/delete/<userid>', methods=['DELETE'])
 # Using GET method for now for easier testing
-@app.route('/api/user/delete/<userid>')
+@app.route('/api/user/delete/<userid>', methods=['POST'])
 def delete_user(userid):
     # Check user is logged in
     # if not session.get('logged_in'):
@@ -407,7 +407,7 @@ def add_book():
 
 # @app.route('/api/books/delete/<bookid>', methods=['DELETE'])
 # Using GET method for now for easier testing
-@app.route('/api/books/delete/<bookid>')
+@app.route('/api/books/delete/<bookid>', methods=['POST'])
 def delete_book(bookid):
     # Check user is logged in, and that they own the associated book listing
     # if not session.get('logged_in'):
