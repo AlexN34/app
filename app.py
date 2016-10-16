@@ -283,6 +283,14 @@ def delete_user(userid):
     # # Check logged in user is the one being deleted
     # if str(userid) != str(session['user_id']):
     #     return not_auth()
+    
+    # Check user is logged in (has a valid token)
+    if not verify_auth_token(request.form['token']):
+        return not_logged_in()
+
+    # Check the user being updated is the same as the logged in user from the token
+    if (str(userid) != str(verify_auth_token(request.form['token']))):
+        return not_auth()
 
     c, con = connection()
 
@@ -344,7 +352,12 @@ def get_userlist():
 def add_book():
     # if not session.get('logged_in'):
     #     return not_logged_in()
-    index()
+
+    # Check user is logged in (has a valid token)
+    if not verify_auth_token(request.form['token']):
+        return not_logged_in()
+
+    userid = verify_auth_token(request.form['token'])
 
     name = request.form['name']
     author = request.form['author']
@@ -377,9 +390,9 @@ def add_book():
     book_id = c.lastrowid  # Get the id of the newly inserted book
     query = ("INSERT INTO Book_List (user_id, book_id, `date`)"
              "VALUES (%s, %s, %s)")
-    print(time.strftime('%Y-%m-%d %H:%M:%S'))
+    # print(time.strftime('%Y-%m-%d %H:%M:%S'))
     # values = (session['user_id'], book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
-    values = (1, book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
+    values = (userid, book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
 
     c.execute(query, values)
 
@@ -400,6 +413,10 @@ def delete_book(bookid):
     # if not session.get('logged_in'):
     #     return not_logged_in()
 
+    # Check user is logged in (has a valid token)
+    if not verify_auth_token(request.form['token']):
+        return not_logged_in()
+
     c, con = connection()
     query = ("SELECT * FROM Book_List WHERE book_id = %s")
     c.execute(query, [bookid])
@@ -409,6 +426,10 @@ def delete_book(bookid):
     #     return not_auth()
 
     if rv:
+        # Check the user being updated is the same as the logged in user from the token
+        if (str(rv[0]) != str(verify_auth_token(request.form['token']))):
+            return not_auth()
+
         query = ("DELETE FROM Book WHERE book_id = %s")
         c.execute(query, [bookid])
         query = ("DELETE FROM Book_List WHERE book_id = %s")
