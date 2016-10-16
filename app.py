@@ -594,7 +594,7 @@ def request_book(book_id):
 # Generates a token with the user_id as data and an expiration time of 10 minutes
 def generate_auth_token(user_id, expiration = 600):
     s = Serializer(app.secret_key, expires_in = expiration)
-    returns s.dumps({ 'user_id': user_id })
+    return s.dumps({ 'user_id': user_id })
 
 # Verifies the token is valid and not expired, and returns the user_id 
 def verify_auth_token(token):
