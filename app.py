@@ -361,13 +361,13 @@ def add_book():
 
     name = request.form['name']
     author = request.form['author']
-    isbn = request.form['isbn']
     prescribed_course = request.form['prescribed_course']
     condition = request.form['condition']
     transaction_type = request.form['transaction']
     price = request.form['price']
 
     # Optional parameters
+    isbn = request.form.get('isbn', None)
     bookStatus = request.form.get('status', None)
     edition = request.form.get('edition', None)
     description = request.form.get('description', None)
@@ -594,6 +594,8 @@ def get_book_listings():
 
     listings = []
     for item in rv:
+        print(item[4])
+        print (item[5])
         listingDict = {
             'user_id': item[0],
             'email': item[1],
