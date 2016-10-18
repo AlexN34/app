@@ -381,7 +381,7 @@ def add_book():
     query = ("INSERT INTO Book "
              "(name, author, isbn, prescribed_course, edition, `condition`, "
              "transaction_type, price, description) "
-             "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+             "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
     values = (name, author, isbn, prescribed_course, edition, condition,
               transaction_type, price, description)
     c.execute(query, values)
