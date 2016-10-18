@@ -599,20 +599,24 @@ def get_book_listings():
             'email': item[1],
             'listing_id': item[2],
             'date': item[3],
-            'book_id': item[3],
-            'name': item[3],
-            'author': item[3],
-            'isbn': item[3],
-            'course': item[3],
-            'pages': item[3],
-            'edition': item[3],
-            'condition': item[3],
-            'trans_type': item[3],
-            'status': item[3],
-            'price': item[3],
-            'description': item[3],
+            'book_id': item[4],
+            'name': item[5],
+            'author': item[6],
+            'isbn': item[7],
+            'course': item[8],
+            'edition': item[9],
+            'condition': item[10],
+            'trans_type': item[11],
+            'status': item[12],
+            'price': float(item[13]),
+            'margin': float(item[14]),
+            'description': item[15],
         }
         listings.append(listingDict)
+
+    c.close()
+    con.close()
+    return jsonify(listings)
 
 
 
