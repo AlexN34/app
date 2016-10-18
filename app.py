@@ -371,7 +371,7 @@ def add_book():
     bookStatus = request.form.get('status', None)
     edition = request.form.get('edition', None)
     description = request.form.get('description', None)
-    margin = request.form.get('margin', None)
+    # margin = request.form.get('margin', None)
 
     c, con = connection()
     # http://dev.mysql.com/doc/refman/5.7/en/keywords.html
@@ -380,10 +380,10 @@ def add_book():
     # error-in-sql-syntax-for-python-and-mysql-on-insert-operation
     query = ("INSERT INTO Book "
              "(name, author, isbn, prescribed_course, edition, `condition`, "
-             "status, price, margin, description) "
+             "transaction_type, price, description) "
              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
     values = (name, author, isbn, prescribed_course, edition, condition,
-              transaction_type, price, margin, description)
+              transaction_type, price, description)
     c.execute(query, values)
 
     # Mark book listing as belonging to user
