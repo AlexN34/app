@@ -594,8 +594,6 @@ def get_book_listings():
 
     listings = []
     for item in rv:
-        print(item[4])
-        print (item[5])
         listingDict = {
             'user_id': item[0],
             'email': item[1],
@@ -619,6 +617,45 @@ def get_book_listings():
     c.close()
     con.close()
     return jsonify(listings)
+
+@app.route('/api/booklistings/<bookid>')
+def get_book_listing(bookid):
+    c, con = connection()
+    query = ("SELECT User.user_id, User.email, Book_List.id, Book_List.date, Book.* "
+                "FROM Book_List "
+                "INNER JOIN Book "
+                "ON Book_List.book_id=Book.book_id "
+                "INNER JOIN User "
+                "ON Book_List.user_id=User.user_id "
+                "WHERE Book.status='available' AND Book.book_id = %s")
+    c.execute(query, [bookid])
+    rv = c.fetchone()
+
+    if rv:
+        c.close()
+        con.close()
+        return jsonify({
+            'user_id': rv[0],
+            'email': rv[1],
+            'listing_id': rv[2],
+            'date': rv[3],
+            'book_id': rv[4],
+            'name': rv[5],
+            'author': rv[6],
+            'isbn': rv[7],
+            'course': rv[8],
+            'edition': rv[9],
+            'condition': rv[10],
+            'trans_type': rv[11],
+            'status': rv[12],
+            'price': float(rv[13]),
+            'margin': float(rv[14]),
+            'description': rv[15],
+        })
+
+    c.close()
+    con.close()
+    return not_found()
 
 
 
