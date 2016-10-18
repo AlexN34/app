@@ -380,10 +380,10 @@ def add_book():
     # error-in-sql-syntax-for-python-and-mysql-on-insert-operation
     query = ("INSERT INTO Book "
              "(name, author, isbn, prescribed_course, edition, `condition`, "
-             "transaction_type, status, price, margin, description) "
-             "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+             "status, price, margin, description) "
+             "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
     values = (name, author, isbn, prescribed_course, edition, condition,
-              transaction_type, bookStatus, price, margin, description)
+              transaction_type, price, margin, description)
     c.execute(query, values)
 
     # Mark book listing as belonging to user
@@ -577,6 +577,43 @@ def get_listings():
     c.close()
     con.close()
     return jsonify(listings)
+
+# Testing JOIN
+@app.route('/api/booklistings')
+def get_book_listings():
+    c, con = connection()
+    query = ("SELECT User.user_id, User.email, Book_List.id, Book_List.date, Book.* "
+                "FROM Book_List "
+                "INNER JOIN Book "
+                "ON Book_List.book_id=Book.book_id "
+                "INNER JOIN User "
+                "ON Book_List.user_id=User.user_id "
+                "WHERE Book.status='available'")
+    c.execute(query)
+    rv = c.fetchall()
+
+    listings = []
+    for item in rv:
+        listingDict = {
+            'user_id': item[0],
+            'email': item[1],
+            'listing_id': item[2],
+            'date': item[3],
+            'book_id': item[3],
+            'name': item[3],
+            'author': item[3],
+            'isbn': item[3],
+            'course': item[3],
+            'pages': item[3],
+            'edition': item[3],
+            'condition': item[3],
+            'trans_type': item[3],
+            'status': item[3],
+            'price': item[3],
+            'description': item[3],
+        }
+        listings.append(listingDict)
+
 
 
 @app.route('/api/request/<book_id>')
