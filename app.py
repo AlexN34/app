@@ -705,7 +705,7 @@ def request_book(book_id):
     query = ("SELECT * FROM Book_List WHERE book_id = %s")
     c.execute(query, [book_id])
     rv = c.fetchall()
-    
+
     if rv: # book exists
         selling_user_id = rv[1]
 
@@ -740,8 +740,8 @@ def get_notifications(user_id):
                 "FROM Transaction "
                 "INNER JOIN Notification "
                 "ON Transaction.Selling_User_Id=Notification.User_Id "
-                "WHERE Transaction.Status='pending'")
-    c.execute(query)
+                "WHERE Transaction.Status='pending' AND Transaction.Selling_User_Id = %s")
+    c.execute(query, [user_id])
     rv = c.fetchall()
 
     notif = []
