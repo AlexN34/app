@@ -691,7 +691,7 @@ def get_book_listing(bookid):
 #     else:
 #         return not_found()
 
-@app.route('/api/request/<book_id>')
+@app.route('/api/request/<book_id>', methods=['POST'])
 def request_book(book_id):
     # TODO how to retrieve requesting user? Assume retrieving from a form
     # Check token
