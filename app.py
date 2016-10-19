@@ -710,6 +710,7 @@ def request_book(book_id):
     if rv: # book exists
         print ("Message")
         #print (vars(rv))
+        print (rv[0])
         selling_user_id = rv[1]
 
         query = ("INSERT INTO Transaction (Buying_User_Id, Selling_User_Id, Book_Id, Status) "
