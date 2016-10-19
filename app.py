@@ -715,7 +715,7 @@ def request_book(book_id):
 
         transaction_id = c.lastrowid
         query = ("INSERT INTO Notification "
-                 "(User_Id, Transaction_Id)"
+                 "(User_Id, Transaction_Id) "
                  "VALUES (%s, %s)")
         values = (selling_user_id, transaction_id)
         c.execute(query, values)
