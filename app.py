@@ -734,6 +734,7 @@ def request_book(book_id):
 
 @app.route('/api/request/notifications/<user_id>')
 def get_notifications(user_id):
+    c, con = connection()
     query = ("SELECT Transaction.*, Notification.* "
                 "FROM Transaction "
                 "INNER JOIN Notification "
@@ -758,7 +759,7 @@ def get_notifications(user_id):
 
     c.close()
     con.close()
-    return jsonify(listings)
+    return jsonify(notif)
 
 # https://blog.miguelgrinberg.com/post/restful-authentication-with-flask
 # Generates a token with the user_id as data and an expiration time of 10 minutes
