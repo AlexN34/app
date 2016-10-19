@@ -705,7 +705,7 @@ def request_book(book_id):
     c, con = connection()
     query = ("SELECT * FROM Book_List WHERE book_id = %s")
     c.execute(query, [bookid])
-    rv = c.fetchall()
+    rv = c.fetchone()
 
     if rv: # book exists
         print ("Message")
