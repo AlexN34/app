@@ -659,37 +659,106 @@ def get_book_listing(bookid):
 
 
 
+# @app.route('/api/request/<book_id>')
+# def request_book(book_id):
+#     # TODO how to retrieve requesting user? Assume retrieving from a form
+#     buying_user_id = request.form['buying_user_id']
+#     price = request.form['price']
+#     request_status = "Pending"
+#     c, con = connection()
+#     query = ("SELECT * FROM Book_List WHERE book_id = %s" % (book_id))
+#     c.execute(query)
+#     rv = c.fetchall()
+#     if rv:
+#         selling_user_id = rv[0][1]  # TODO make cleaner
+#         query = ("INSERT INTO Transaction_List "
+#                  "(buying_user_id, selling_user_id, price, status)"
+#                  "VALUES (%s, %s, %s, %s)")
+#         values = (buying_user_id, selling_user_id, price, request_status)
+#         c.execute(query, values)
+
+#         """ Does Transaction List need to know book ID/transaction? how to match
+#             Notification with Transaction List to retrieve price? """
+#         query = ("INSERT INTO Notification "
+#                  "(user_id, book_id)"
+#                  "VALUES (%s, %s)")
+#         values = (selling_user_id, book_id)
+#         c.execute(query, values)
+#         con.commit()
+#         c.close()
+#         con.close()
+
+#     else:
+#         return not_found()
+
 @app.route('/api/request/<book_id>')
 def request_book(book_id):
     # TODO how to retrieve requesting user? Assume retrieving from a form
-    buying_user_id = request.form['buying_user_id']
-    price = request.form['price']
-    request_status = "Pending"
+    # Check token
+    if not verify_auth_token(request.form['token']):
+        return not_logged_in()
+
+    buying_user_id = str(verify_auth_token(request.form['token']))
+    request_status = "pending"
+
     c, con = connection()
     query = ("SELECT * FROM Book_List WHERE book_id = %s" % (book_id))
     c.execute(query)
     rv = c.fetchall()
-    if rv:
-        selling_user_id = rv[0][1]  # TODO make cleaner
-        query = ("INSERT INTO Transaction_List "
-                 "(buying_user_id, selling_user_id, price, status)"
+    if rv: # book exists
+        selling_user_id = rv[1]
+
+        query = ("INSERT INTO Transaction (Buying_User_Id, Selling_User_Id, Book_Id, Status) "
                  "VALUES (%s, %s, %s, %s)")
-        values = (buying_user_id, selling_user_id, price, request_status)
+        values = (buying_user_id, selling_user_id, book_id, request_status)
         c.execute(query, values)
 
-        """ Does Transaction List need to know book ID/transaction? how to match
-            Notification with Transaction List to retrieve price? """
+        transaction_id = c.lastrowid
         query = ("INSERT INTO Notification "
-                 "(user_id, book_id)"
+                 "(User_Id, Transaction_Id)"
                  "VALUES (%s, %s)")
-        values = (selling_user_id, book_id)
+        values = (selling_user_id, transaction_id)
         c.execute(query, values)
         con.commit()
         c.close()
         con.close()
-
+        return jsonify({
+            'status': 201,
+            'message': 'Request sent',
+            }), status.HTTP_201_CREATED
     else:
         return not_found()
+
+# @app.route('/api/respond/<book_id>')
+# def respond_book(notification_id):
+
+@app.route('/api/request/notifications/<user_id>')
+def get_notifications(user_id):
+    query = ("SELECT Transaction.*, Notification.* "
+                "FROM Transaction "
+                "INNER JOIN Notification "
+                "ON Transaction.Selling_User_Id=Notification.User_Id "
+                "WHERE Transaction.Status='pending'")
+    c.execute(query)
+    rv = c.fetchall()
+
+    notif = []
+    for item in rv:
+        notifDict = {
+            'notification_id': item[0],
+            'selling_user_id': item[1],
+            'buying_user_id': item[2],
+            'status': item[3],
+            'book_id': item[4],
+            'notification_id1': item[5],
+            'user_id': item[6],
+            'transaction_id': item[7],
+        }
+        notif.append(notifDict)
+
+    c.close()
+    con.close()
+    return jsonify(listings)
 
 # https://blog.miguelgrinberg.com/post/restful-authentication-with-flask
 # Generates a token with the user_id as data and an expiration time of 10 minutes
