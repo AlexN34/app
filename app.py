@@ -702,9 +702,10 @@ def request_book(book_id):
     request_status = "pending"
 
     c, con = connection()
-    query = ("SELECT * FROM Book_List WHERE book_id = %s" % (book_id))
-    c.execute(query)
+    query = ("SELECT * FROM Book_List WHERE book_id = %s")
+    c.execute(query, [book_id])
     rv = c.fetchall()
+    
     if rv: # book exists
         selling_user_id = rv[1]
 
