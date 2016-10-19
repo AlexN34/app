@@ -700,14 +700,16 @@ def request_book(book_id):
 
     buying_user_id = str(verify_auth_token(request.form['token']))
     request_status = "pending"
+    bookid = str(book_id)
 
     c, con = connection()
     query = ("SELECT * FROM Book_List WHERE book_id = %s")
-    c.execute(query, [book_id])
+    c.execute(query, [bookid])
     rv = c.fetchall()
 
     if rv: # book exists
-        print (len(rv))
+        print ("Message")
+        print (vars(rv))
         selling_user_id = rv[1]
 
         query = ("INSERT INTO Transaction (Buying_User_Id, Selling_User_Id, Book_Id, Status) "
