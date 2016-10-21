@@ -368,7 +368,7 @@ def add_book():
 
     # Optional parameters
     isbn = request.form.get('isbn', None)
-    bookStatus = request.form.get('status', None)
+    # bookStatus = request.form.get('status', None)
     edition = request.form.get('edition', None)
     description = request.form.get('description', None)
     # margin = request.form.get('margin', None)
@@ -404,6 +404,54 @@ def add_book():
         'message': 'Book created',
         }), status.HTTP_201_CREATED
 
+@app.route('/api/books/update/<bookid>', methods=['POST'])
+def update_book(bookid):
+    # Check user is logged in (has a valid token)
+    if not verify_auth_token(request.form['token']):
+        return not_logged_in()
+
+    c, con = connection()
+    query = ("SELECT Book_List.user_id, Book.* "
+             "FROM Book_List INNER JOIN Book "
+             "ON Book_List.book_id=Book.book_id "
+             "WHERE book_id = %s")
+    c.execute(query, [bookid])
+    rv = c.fetchone()
+
+    if rv:
+        # Check book being updated belongs to user 
+        if (str(rv[0]) != str(verify_auth_token(request.form['token']))):
+            return not_auth()
+
+        name = request.form.get('name', rv[2])
+        author = request.form.get('author', rv[3])
+        isbn = request.form.get('isbn', rv[4])
+        prescribed_course = request.form.get('prescribed_course', rv[5])
+        edition = request.form.get('edition', rv[6])
+        condition = request.form.get('condition', rv[7])
+        transaction_type = request.form.get('transaction_type', rv[8])
+        price = request.form.get('price', rv[10])
+        description = request.form.get('description', rv[12])
+
+        query = ("UPDATE Book SET "
+                 "name = %s, author = %s, isbn = %s, prescribed_course = %s, "
+                 "edition = %s, `condition` = %s, transaction_type = %s, "
+                 "price = %s, description = %s "
+                 "WHERE book_id = %s")
+        values = (name, author, isbn, prescribed_course, edition, condition,
+                  transaction_type, price, description, bookid)
+        c.execute(query, values)
+        con.commit()
+        c.close()
+        con.close()  
+        return jsonify({
+            'status': 200,
+            'message': "Book updated",
+            })
+
+    c.close()
+    con.close()    
+    return not_found()
 
 # @app.route('/api/books/delete/<bookid>', methods=['DELETE'])
 # Using GET method for now for easier testing
