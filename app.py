@@ -842,6 +842,38 @@ def get_wishlist(user_id):
 
     return jsonify(wishlist)
 
+@app.route('/api/user/transactions/<user_id>')
+def get_transactions(user_id):
+    # Check user is logged in (has a valid token)
+    if not verify_auth_token(request.form['token']):
+        return not_logged_in()
+
+    # Check request is the same as the logged in user from the token
+    if (str(userid) != str(verify_auth_token(request.form['token']))):
+        return not_auth()
+
+    c, con = connection()
+    query = ("SELECT * from Transaction "
+             "WHERE Selling_User_Id = %s OR Buying_User_Id = %s")
+    values = (user_id, user_id)
+    c.execute(query, values)
+    rv = c.fetchall()
+    c.close()
+    con.close()
+
+    transactions = []
+    for item in rv:
+        record = {
+            'seller_id': item[1],
+            'buyer_id': item[2],
+            'status': item[3],
+            'book_id': item[4],
+        }
+        transactions.append(record)
+
+    return jsonify(transactions)
+
+
 # https://blog.miguelgrinberg.com/post/restful-authentication-with-flask
 # Generates a token with the user_id as data and an expiration time of 10 minutes
 def generate_auth_token(user_id, expiration = 600):
