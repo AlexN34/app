@@ -414,7 +414,7 @@ def update_book(bookid):
     query = ("SELECT Book_List.user_id, Book.* "
              "FROM Book_List INNER JOIN Book "
              "ON Book_List.book_id=Book.book_id "
-             "WHERE book_id = %s")
+             "WHERE Book_List.book_id = %s")
     c.execute(query, [bookid])
     rv = c.fetchone()
 
