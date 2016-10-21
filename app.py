@@ -390,8 +390,6 @@ def add_book():
     book_id = c.lastrowid  # Get the id of the newly inserted book
     query = ("INSERT INTO Book_List (user_id, book_id, `date`)"
              "VALUES (%s, %s, %s)")
-    # print(time.strftime('%Y-%m-%d %H:%M:%S'))
-    # values = (session['user_id'], book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
     values = (userid, book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
 
     c.execute(query, values)
@@ -813,6 +811,36 @@ def get_notifications(user_id):
     c.close()
     con.close()
     return jsonify(notif)
+
+@app.route('/api/user/wishlist/<user_id>')
+def get_wishlist(user_id):
+    c, con = connection()
+    query = ("SELECT Book_List.user_id, Book.* "
+             "FROM Book_List INNER JOIN Book "
+             "ON Book_List.book_id=Book.book_id "
+             "WHERE Book.transaction_type=\"buy\" "
+             "AND Book_List.user_id=%s")
+    c.execute(query, [user_id])
+    rv = c.fetchall()
+    c.close()
+    con.close()
+
+    wishlist = []
+    for item in rv:
+        bookDict = {
+            'user_id': item[0],
+            'book_id': item[1],
+            'name': item[2],
+            'author': item[3],
+            'isbn': item[4],
+            'prescribed_course': item[5],
+            'edition': item[6],
+            'condition': item[7],
+            'price': float(item[10]),
+        }
+        wishlist.append(bookDict)
+
+    return jsonify(wishlist)
 
 # https://blog.miguelgrinberg.com/post/restful-authentication-with-flask
 # Generates a token with the user_id as data and an expiration time of 10 minutes
