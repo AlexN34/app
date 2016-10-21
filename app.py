@@ -780,8 +780,8 @@ def request_book(book_id):
     else:
         return not_found()
 
-@app.route('/api/response/<notification_id>')
-def response_book(notification_id):
+# @app.route('/api/response/<notification_id>')
+# def response_book(notification_id):
     # CASE: Accepting Book Request
     # Check book exists and is available
     # Update Book status to sold
