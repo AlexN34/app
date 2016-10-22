@@ -24,6 +24,8 @@ app.config['MYSQL_DB'] = 'bookswapp'
 app.config.from_object(__name__)  # config from above variables in file
 # mysql = MySQL(app)  # attaches mysql object to the app?
 
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+
 # set the secret key
 app.secret_key = os.urandom(24)
 
@@ -117,18 +119,13 @@ def login():
             error = "Invalid email"
 
     return login_error(error)
-    # Point this to home page with errors if they occurred
-    # return render_template('index.html', error=error)
 
 
 @app.route('/logout')
 def logout():
-    """ User logout/authentication/session management. """
     session.pop('email', None)
     session.pop('logged_in', False)
     session.pop('user_id', None)
-    flash('You were logged out')
-    # return redirect(url_for('index'))
     return jsonify({
         'status': 200,
         'message': 'User logout successful',
@@ -148,6 +145,7 @@ def register():
     password = request.form['password']
     university = request.form.get('university', None)
     location = request.form.get('location', None)
+    mobile = request.form['mobile']
 
     c, con = connection()
     c.execute("SELECT * FROM User WHERE email = '%s'" % (email))
@@ -158,28 +156,20 @@ def register():
         error = "Email already exists"
         c.close()
         con.close()
-        # return redirect(url_for('index')), status.HTTP_400_BAD_REQUEST
         return registration_error(error)
 
-    # Create the user return success status
     else:
-        # This format supposedly prevents SQL injections
+        # This format prevents SQL injections
         query = ("INSERT INTO User "
-                 "(email, password, university, location) "
-                 "VALUES (%s, %s, %s, %s)")
-        values = (email, password, university, location)
+                 "(email, password, university, location, mobile) "
+                 "VALUES (%s, %s, %s, %s, %s)")
+        values = (email, password, university, location, mobile)
         c.execute(query, values)
 
         con.commit()
         c.close()
         con.close()
 
-        flash("Just registered new user. Details are:")
-        flash(request.form['email'])
-        flash(request.form['password'])
-        flash(request.form['university'])
-        flash(request.form['location'])
-        # return redirect(url_for('index')), status.HTTP_201_CREATED
         return jsonify({
             'status': 201,
             'message': 'User registration successful',
@@ -202,6 +192,7 @@ def get_user(userid):
             'password': rv[2],
             'university': rv[3],
             'location': rv[4],
+            'mobile': rv[5],
             })
 
     return not_found()
@@ -212,14 +203,6 @@ def get_user(userid):
 @app.route('/api/user/update/<userid>', methods=['POST'])
 def update_user(userid):
     message = ''
-
-    # # Check user is logged in
-    # if not session.get('logged_in'):
-    #     return not_logged_in()
-
-    # # Check logged in user is the one being updated
-    # if str(userid) != str(session['user_id']):
-    #     return not_auth()
 
     # Check user is logged in (has a valid token)
     if not verify_auth_token(request.form['token']):
@@ -261,6 +244,12 @@ def update_user(userid):
         c.execute(query, values)
         message += "Location updated\n"
 
+    if ('mobile' in request.form):
+        query = ("UPDATE User SET mobile = %s WHERE user_id = %s")
+        values = (request.form['mobile'], userid)
+        c.execute(query, values)
+        message += "Mobile updated\n"
+
     con.commit()
     c.close()
     con.close()
@@ -274,14 +263,6 @@ def update_user(userid):
 # Using GET method for now for easier testing
 @app.route('/api/user/delete/<userid>', methods=['POST'])
 def delete_user(userid):
-    # Check user is logged in
-    # if not session.get('logged_in'):
-    #     return not_logged_in()
-
-    # # Check logged in user is the one being deleted
-    # if str(userid) != str(session['user_id']):
-    #     return not_auth()
-
     # Check user is logged in (has a valid token)
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
@@ -336,7 +317,8 @@ def get_userlist():
             'email': user[1],
             'password': user[2],
             'university': user[3],
-            'location': user[4]
+            'location': user[4],
+            'mobile': user[5],
         }
         userList.append(userDict)
 
@@ -345,12 +327,27 @@ def get_userlist():
         finalState = status.HTTP_200_OK
     return jsonify(userList), finalState
 
+# http://flask.pocoo.org/docs/0.11/patterns/fileuploads/
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+@app.route('/api/books/image/<bookid>')
+def get_book_image(bookid):
+    c, con = connection()
+    query = ("SELECT * FROM Book_Image WHERE book_id = %s")
+    c.execute(query, [bookid])
+    rv = c.fetchone()
+    if rv:
+        return jsonify({
+            'book_id': bookid,
+            'image': rv[2],
+            })
+    else:
+        return not_found()
 
 @app.route('/api/books/create', methods=['POST'])
 def add_book():
-    # if not session.get('logged_in'):
-    #     return not_logged_in()
-
     # Check user is logged in (has a valid token)
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
@@ -386,6 +383,19 @@ def add_book():
 
     # Mark book listing as belonging to user
     book_id = c.lastrowid  # Get the id of the newly inserted book
+
+    print ("Checking image")
+    # Upload image if exists
+    if ('image' in request.files):
+        print ("Image attached")
+        image = request.files['image']
+        if (image.filename != '' and allowed_file(file.filename)):
+            print ("Image attached1")
+            image_data = image.read()
+            query = ("INSERT INTO Book_Image (book_id, image) VALUES (%s, %s)")
+            values = (image_data, book_id)
+            c.execute(query, values)
+
     query = ("INSERT INTO Book_List (user_id, book_id, `date`)"
              "VALUES (%s, %s, %s)")
     values = (userid, book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
@@ -455,10 +465,6 @@ def update_book(bookid):
 # Using GET method for now for easier testing
 @app.route('/api/books/delete/<bookid>', methods=['POST'])
 def delete_book(bookid):
-    # Check user is logged in, and that they own the associated book listing
-    # if not session.get('logged_in'):
-    #     return not_logged_in()
-
     # Check user is logged in (has a valid token)
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
@@ -467,9 +473,6 @@ def delete_book(bookid):
     query = ("SELECT * FROM Book_List WHERE book_id = %s")
     c.execute(query, [bookid])
     rv = c.fetchone()
-
-    # if (rv[0] != session['user_id']):
-    #     return not_auth()
 
     if rv:
         # Check the user being updated is same as logged in user from the token
@@ -742,7 +745,6 @@ def get_book_listing(bookid):
 
 @app.route('/api/request/<book_id>', methods=['POST'])
 def request_book(book_id):
-    # TODO how to retrieve requesting user? Assume retrieving from a form
     # Check token
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
@@ -757,9 +759,6 @@ def request_book(book_id):
     rv = c.fetchone()
 
     if rv:  # book exists
-        print("Message")
-        # print(vars(rv))
-        print(rv[0])
         selling_user_id = rv[1]
 
         query = ("INSERT INTO Transaction (Buying_User_Id, Selling_User_Id, "
