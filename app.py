@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 # imports
-from flask import Flask, request, session, redirect, \
-    url_for, render_template, flash, jsonify
+from flask import Flask, request, session, \
+    render_template, flash, jsonify
 # abort
 from flask_api import status
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 import time
 from itsdangerous import (TimedJSONWebSignatureSerializer
                           as Serializer, BadSignature, SignatureExpired)
@@ -79,7 +79,6 @@ def index():
 @app.route('/api/user/login', methods=['GET', 'POST'])
 def login():
     # Should sanitate input and hash password
-
     error = None
 
     # Check that email and password fields are not empty
@@ -226,10 +225,9 @@ def update_user(userid):
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
 
-    # Check the user being updated is the same as the logged in user from the token
+    # Check the user being updated is the same as logged in user from the token
     if (str(userid) != str(verify_auth_token(request.form['token']))):
         return not_auth()
-
 
     c, con = connection()
 
@@ -288,7 +286,7 @@ def delete_user(userid):
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
 
-    # Check the user being updated is the same as the logged in user from the token
+    # Check the user being updated is the same as logged in user from the token
     if (str(userid) != str(verify_auth_token(request.form['token']))):
         return not_auth()
 
@@ -402,6 +400,7 @@ def add_book():
         'message': 'Book created',
         }), status.HTTP_201_CREATED
 
+
 @app.route('/api/books/update/<bookid>', methods=['POST'])
 def update_book(bookid):
     # Check user is logged in (has a valid token)
@@ -417,7 +416,7 @@ def update_book(bookid):
     rv = c.fetchone()
 
     if rv:
-        # Check book being updated belongs to user 
+        # Check book being updated belongs to user
         if (str(rv[0]) != str(verify_auth_token(request.form['token']))):
             return not_auth()
 
@@ -441,15 +440,16 @@ def update_book(bookid):
         c.execute(query, values)
         con.commit()
         c.close()
-        con.close()  
+        con.close()
         return jsonify({
             'status': 200,
             'message': "Book updated",
             })
 
     c.close()
-    con.close()    
+    con.close()
     return not_found()
+
 
 # @app.route('/api/books/delete/<bookid>', methods=['DELETE'])
 # Using GET method for now for easier testing
@@ -472,7 +472,7 @@ def delete_book(bookid):
     #     return not_auth()
 
     if rv:
-        # Check the user being updated is the same as the logged in user from the token
+        # Check the user being updated is same as logged in user from the token
         if (str(rv[1]) != str(verify_auth_token(request.form['token']))):
             return not_auth()
 
@@ -624,17 +624,19 @@ def get_listings():
     con.close()
     return jsonify(listings)
 
+
 # Testing JOIN
 @app.route('/api/booklistings')
 def get_book_listings():
     c, con = connection()
-    query = ("SELECT User.user_id, User.email, Book_List.id, Book_List.date, Book.* "
-                "FROM Book_List "
-                "INNER JOIN Book "
-                "ON Book_List.book_id=Book.book_id "
-                "INNER JOIN User "
-                "ON Book_List.user_id=User.user_id "
-                "WHERE Book.status='available'")
+    query = ("SELECT User.user_id, User.email, Book_List.id, Book_List.date, "
+             "Book.* "
+             "FROM Book_List "
+             "INNER JOIN Book "
+             "ON Book_List.book_id=Book.book_id "
+             "INNER JOIN User "
+             "ON Book_List.user_id=User.user_id "
+             "WHERE Book.status='available'")
     c.execute(query)
     rv = c.fetchall()
 
@@ -664,16 +666,18 @@ def get_book_listings():
     con.close()
     return jsonify(listings)
 
+
 @app.route('/api/booklistings/<bookid>')
 def get_book_listing(bookid):
     c, con = connection()
-    query = ("SELECT User.user_id, User.email, Book_List.id, Book_List.date, Book.* "
-                "FROM Book_List "
-                "INNER JOIN Book "
-                "ON Book_List.book_id=Book.book_id "
-                "INNER JOIN User "
-                "ON Book_List.user_id=User.user_id "
-                "WHERE Book.status='available' AND Book.book_id = %s")
+    query = ("SELECT User.user_id, User.email, Book_List.id, Book_List.date, "
+             "Book.* "
+             "FROM Book_List "
+             "INNER JOIN Book "
+             "ON Book_List.book_id=Book.book_id "
+             "INNER JOIN User "
+             "ON Book_List.user_id=User.user_id "
+             "WHERE Book.status='available' AND Book.book_id = %s")
     c.execute(query, [bookid])
     rv = c.fetchone()
 
@@ -703,8 +707,6 @@ def get_book_listing(bookid):
     con.close()
     return not_found()
 
-
-
 # @app.route('/api/request/<book_id>')
 # def request_book(book_id):
 #     # TODO how to retrieve requesting user? Assume retrieving from a form
@@ -723,7 +725,7 @@ def get_book_listing(bookid):
 #         values = (buying_user_id, selling_user_id, price, request_status)
 #         c.execute(query, values)
 
-#         """ Does Transaction List need to know book ID/transaction? how to match
+#      """ Does Transaction List need to know book ID/transaction? how to match
 #             Notification with Transaction List to retrieve price? """
 #         query = ("INSERT INTO Notification "
 #                  "(user_id, book_id)"
@@ -736,6 +738,7 @@ def get_book_listing(bookid):
 
 #     else:
 #         return not_found()
+
 
 @app.route('/api/request/<book_id>', methods=['POST'])
 def request_book(book_id):
@@ -753,13 +756,14 @@ def request_book(book_id):
     c.execute(query, [bookid])
     rv = c.fetchone()
 
-    if rv: # book exists
-        print ("Message")
-        #print (vars(rv))
-        print (rv[0])
+    if rv:  # book exists
+        print("Message")
+        # print(vars(rv))
+        print(rv[0])
         selling_user_id = rv[1]
 
-        query = ("INSERT INTO Transaction (Buying_User_Id, Selling_User_Id, Book_Id, Status) "
+        query = ("INSERT INTO Transaction (Buying_User_Id, Selling_User_Id, "
+                 "Book_Id, Status) "
                  "VALUES (%s, %s, %s, %s)")
         values = (buying_user_id, selling_user_id, book_id, request_status)
         c.execute(query, values)
@@ -780,28 +784,74 @@ def request_book(book_id):
     else:
         return not_found()
 
-# @app.route('/api/response/<notification_id>')
-# def response_book(notification_id):
-    # CASE: Accepting Book Request
-    # Check book exists and is available
-    # Update Book status to sold
-    # Update Transaction status to accept
-    # Update Notification seen to 1 (true)
-    # Send notification to Transaction.Buying_User_Id
 
-    # CASE: Rejecting Book Request
-    # Update Transaction status to reject
-    # Update Notification seen to 1 (true)
-    # Send notification to Transaction.Buying_User_Id
+@app.route('/api/response/<notification_id>')
+def response_book(notification_id):
+    if not verify_auth_token(request.form['token']):
+        return not_logged_in()
+    # Skip request is the same as the logged in user from the token (?)
+    # Action contains accept/reject option
+    action = request.form['action']
+    response_type = 'response'  # Type for follow-on notification
+    c, con = connection()
+    # query = ("SELECT * FROM Notification WHERE Id = %s")
+    query = ("SELECT Transaction.Book_Id Transaction.Id "
+             "Transaction.Buying_User_Id "
+             "FROM Notification "
+             "INNER JOIN Transaction "
+             "ON Notification.Transaction_Id=Transaction.Id "
+             "WHERE Transaction.Status='pending' AND "
+             "Notification.Id= %s")
+    c.execute(query, [notification_id])
+    rv1 = c.fetchone()
+    if rv1:
+        query = ("SELECT * FROM Book WHERE Id = %s")
+        c.execute(query, [rv1[0]])
+        rv2 = c.fetchone()
+        if rv2:  # Book exists
+                query = ("UPDATE Transaction SET Status = %s WHERE "
+                         " Id = %s")
+                values = (action, rv1[1])
+                c.execute(query, values)
+                if action == 'accept':
+                    query = ("UPDATE Book SET Status = %s WHERE "
+                             " Id = %s")
+                    values = ('sold', rv1[0])
+                    c.execute(query, values)
+                    response_type = 'match'
+        else:
+            return not_found()
+        query = ("UPDATE Transaction SET Seen = %s WHERE "
+                 " Id = %s")
+        values = (1, rv1[1])  # Set seen to True
+        c.execute(query, values)
+
+        query = ("INSERT INTO Notification (User_Id, Transaction_Id, "
+                 "Seen, Type)"
+                 "VALUES (%s, %s, %s, %s)")
+        # rv1[0] - transaction.book_id, rv1[1] - trsaction.id, rv1[2] - buyer id
+        values = (rv1[2], rv1[1], 0, response_type)
+        c.execute(query, values)
+        con.commit()
+        c.close()
+        con.close()
+        return jsonify({
+            'status': 201,
+            'message': 'Notification acknowledged',
+            }), status.HTTP_201_CREATED
+    else:
+        return not_found()
+
 
 @app.route('/api/request/notifications/<user_id>')
 def get_notifications(user_id):
     c, con = connection()
     query = ("SELECT Transaction.*, Notification.* "
-                "FROM Transaction "
-                "INNER JOIN Notification "
-                "ON Transaction.Selling_User_Id=Notification.User_Id "
-                "WHERE Transaction.Status='pending' AND Transaction.Selling_User_Id = %s")
+             "FROM Transaction "
+             "INNER JOIN Notification "
+             "ON Transaction.Selling_User_Id=Notification.User_Id "
+             "WHERE Transaction.Status='pending' AND "
+             "Transaction.Selling_User_Id = %s")
     c.execute(query, [user_id])
     rv = c.fetchall()
 
@@ -822,6 +872,7 @@ def get_notifications(user_id):
     c.close()
     con.close()
     return jsonify(notif)
+
 
 @app.route('/api/user/wishlist/<user_id>')
 def get_wishlist(user_id):
@@ -853,6 +904,7 @@ def get_wishlist(user_id):
 
     return jsonify(wishlist)
 
+
 @app.route('/api/user/transactions/<user_id>')
 def get_transactions(user_id):
     # Check user is logged in (has a valid token)
@@ -860,7 +912,7 @@ def get_transactions(user_id):
         return not_logged_in()
 
     # Check request is the same as the logged in user from the token
-    if (str(userid) != str(verify_auth_token(request.form['token']))):
+    if (str(user_id) != str(verify_auth_token(request.form['token']))):
         return not_auth()
 
     c, con = connection()
@@ -886,21 +938,23 @@ def get_transactions(user_id):
 
 
 # https://blog.miguelgrinberg.com/post/restful-authentication-with-flask
-# Generates a token with the user_id as data and an expiration time of 10 minutes
-def generate_auth_token(user_id, expiration = 600):
-    s = Serializer(app.secret_key, expires_in = expiration)
-    return s.dumps({ 'user_id': user_id })
+# Generates a token with the user_id as data and an expiration time of 10 minute
+def generate_auth_token(user_id, expiration=600):
+    s = Serializer(app.secret_key, expires_in=expiration)
+    return s.dumps({'user_id': user_id})
 
-# Verifies the token is valid and not expired, and returns the user_id 
+
+# Verifies the token is valid and not expired, and returns the user_id
 def verify_auth_token(token):
     s = Serializer(app.secret_key)
     try:
         data = s.loads(token)
     except SignatureExpired:
         return None
-    except BadSignature: 
+    except BadSignature:
         return None
     return data['user_id']
+
 
 # Error handlers
 # @app.errorhandler(400)
