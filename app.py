@@ -24,6 +24,8 @@ app.config['MYSQL_DB'] = 'bookswapp'
 app.config.from_object(__name__)  # config from above variables in file
 # mysql = MySQL(app)  # attaches mysql object to the app?
 
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+
 # set the secret key
 app.secret_key = os.urandom(24)
 
@@ -326,6 +328,24 @@ def get_userlist():
         finalState = status.HTTP_200_OK
     return jsonify(userList), finalState
 
+# http://flask.pocoo.org/docs/0.11/patterns/fileuploads/
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+@app.route('/api/books/image/<bookid>')
+def get_book_image(bookid):
+    c, con = connection()
+    query = ("SELECT * FROM Book_Image WHERE book_id = %s")
+    c.execute(query, [bookid])
+    rv = c.fetchone()
+    if rv:
+        return jsonify({
+            'book_id': bookid,
+            'image': rv[2],
+            })
+    else:
+        return not_found()
 
 @app.route('/api/books/create', methods=['POST'])
 def add_book():
@@ -364,6 +384,19 @@ def add_book():
 
     # Mark book listing as belonging to user
     book_id = c.lastrowid  # Get the id of the newly inserted book
+
+    print ("Checking image")
+    # Upload image if exists
+    if ('image' in request.files):
+        print ("Image attached")
+        image = request.files['image']
+        if (image.filename != '' and allowed_file(file.filename)):
+            print ("Image attached1")
+            image_data = image.read()
+            query = ("INSERT INTO Book_Image (book_id, image) VALUES (%s, %s)")
+            values = (image_data, book_id)
+            c.execute(query, values)
+
     query = ("INSERT INTO Book_List (user_id, book_id, `date`)"
              "VALUES (%s, %s, %s)")
     values = (userid, book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
