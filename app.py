@@ -24,6 +24,8 @@ app.config['MYSQL_DB'] = 'bookswapp'
 app.config.from_object(__name__)  # config from above variables in file
 # mysql = MySQL(app)  # attaches mysql object to the app?
 
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+
 # set the secret key
 app.secret_key = os.urandom(24)
 
@@ -148,6 +150,7 @@ def register():
     password = request.form['password']
     university = request.form.get('university', None)
     location = request.form.get('location', None)
+    mobile = request.form['mobile']
 
     c, con = connection()
     c.execute("SELECT * FROM User WHERE email = '%s'" % (email))
@@ -165,9 +168,9 @@ def register():
     else:
         # This format supposedly prevents SQL injections
         query = ("INSERT INTO User "
-                 "(email, password, university, location) "
-                 "VALUES (%s, %s, %s, %s)")
-        values = (email, password, university, location)
+                 "(email, password, university, location, mobile) "
+                 "VALUES (%s, %s, %s, %s, %s)")
+        values = (email, password, university, location, mobile)
         c.execute(query, values)
 
         con.commit()
@@ -202,6 +205,7 @@ def get_user(userid):
             'password': rv[2],
             'university': rv[3],
             'location': rv[4],
+            'mobile': rv[5],
             })
 
     return not_found()
@@ -260,6 +264,12 @@ def update_user(userid):
         values = (request.form['location'], userid)
         c.execute(query, values)
         message += "Location updated\n"
+
+    if ('mobile' in request.form):
+        query = ("UPDATE User SET mobile = %s WHERE user_id = %s")
+        values = (request.form['mobile'], userid)
+        c.execute(query, values)
+        message += "Mobile updated\n"
 
     con.commit()
     c.close()
@@ -336,7 +346,8 @@ def get_userlist():
             'email': user[1],
             'password': user[2],
             'university': user[3],
-            'location': user[4]
+            'location': user[4],
+            'mobile': user[5],
         }
         userList.append(userDict)
 
@@ -345,6 +356,24 @@ def get_userlist():
         finalState = status.HTTP_200_OK
     return jsonify(userList), finalState
 
+# http://flask.pocoo.org/docs/0.11/patterns/fileuploads/
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+@app.route('/api/books/image/<bookid>')
+def get_book_image(bookid):
+    c, con = connection()
+    query = ("SELECT * FROM Book_Image WHERE book_id = %s")
+    c.execute(query, [bookid])
+    rv = c.fetchone()
+    if rv:
+        return jsonify({
+            'book_id': bookid,
+            'image': rv[2],
+            })
+    else:
+        return not_found()
 
 @app.route('/api/books/create', methods=['POST'])
 def add_book():
@@ -386,6 +415,19 @@ def add_book():
 
     # Mark book listing as belonging to user
     book_id = c.lastrowid  # Get the id of the newly inserted book
+
+    print ("Checking image")
+    # Upload image if exists
+    if ('image' in request.files):
+        print ("Image attached")
+        image = request.files['image']
+        if (image.filename != '' and allowed_file(file.filename)):
+            print ("Image attached1")
+            image_data = image.read()
+            query = ("INSERT INTO Book_Image (book_id, image) VALUES (%s, %s)")
+            values = (image_data, book_id)
+            c.execute(query, values)
+
     query = ("INSERT INTO Book_List (user_id, book_id, `date`)"
              "VALUES (%s, %s, %s)")
     values = (userid, book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
@@ -455,10 +497,6 @@ def update_book(bookid):
 # Using GET method for now for easier testing
 @app.route('/api/books/delete/<bookid>', methods=['POST'])
 def delete_book(bookid):
-    # Check user is logged in, and that they own the associated book listing
-    # if not session.get('logged_in'):
-    #     return not_logged_in()
-
     # Check user is logged in (has a valid token)
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
@@ -468,18 +506,20 @@ def delete_book(bookid):
     c.execute(query, [bookid])
     rv = c.fetchone()
 
-    # if (rv[0] != session['user_id']):
-    #     return not_auth()
-
     if rv:
         # Check the user being updated is same as logged in user from the token
         if (str(rv[1]) != str(verify_auth_token(request.form['token']))):
             return not_auth()
 
+        # Can probably merge these into one query 
         query = ("DELETE FROM Book WHERE book_id = %s")
         c.execute(query, [bookid])
         query = ("DELETE FROM Book_List WHERE book_id = %s")
         c.execute(query, [bookid])
+        query = ("DELETE Transaction, Notification FROM Transaction INNER JOIN Notification "
+                 "ON Notification.Transaction_Id=Transaction.Id WHERE Transaction.Book_Id = %s")
+        c.execute(query, [bookid])
+
         con.commit()
         c.close()
         con.close()
@@ -782,7 +822,7 @@ def request_book(book_id):
         return not_found()
 
 
-@app.route('/api/response/<notification_id>')
+@app.route('/api/response/<notification_id>', methods=['POST'])
 def response_book(notification_id):
     # Skip request is the same as the logged in user from the token (?)
     # Action contains accept/reject option
@@ -935,7 +975,7 @@ def get_wishlist(user_id):
     return jsonify(wishlist)
 
 
-@app.route('/api/user/transactions/<user_id>')
+@app.route('/api/user/transactions/<user_id>', methods=['POST'])
 def get_transactions(user_id):
     # Check user is logged in (has a valid token)
     if not verify_auth_token(request.form['token']):
@@ -946,9 +986,14 @@ def get_transactions(user_id):
         return not_auth()
 
     c, con = connection()
-    query = ("SELECT * from Transaction "
-             "WHERE Selling_User_Id = %s OR Buying_User_Id = %s")
-    values = (user_id, user_id)
+    query = ("(SELECT T1.*, User.email FROM (SELECT Transaction.*, Book.name FROM Transaction INNER JOIN Book "
+             "ON Transaction.Book_Id=Book.book_id WHERE Transaction.Selling_User_Id = %s OR Transaction.Buying_User_Id = %s) "
+             "AS T1 INNER JOIN User ON T1.Selling_User_Id=User.user_id WHERE T1.Selling_User_Id != %s) UNION "
+             "(SELECT T2.*, User.email FROM (SELECT Transaction.*, Book.name FROM Transaction INNER JOIN Book "
+             "ON Transaction.Book_Id=Book.book_id WHERE Transaction.Selling_User_Id = %s OR Transaction.Buying_User_Id = %s) "
+             "AS T2 INNER JOIN User ON T2.Buying_User_Id=User.user_id "
+             "WHERE T2.Buying_User_Id != %s)")
+    values = (user_id, user_id, user_id, user_id, user_id, user_id)
     c.execute(query, values)
     rv = c.fetchall()
     c.close()
@@ -961,6 +1006,8 @@ def get_transactions(user_id):
             'buyer_id': item[2],
             'status': item[3],
             'book_id': item[4],
+            'book_name': item[5],
+            'other_email': item[6],
         }
         transactions.append(record)
 
