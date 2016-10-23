@@ -446,7 +446,7 @@ def get_matches(book_id):
         course = None
         query = ("SELECT Book.*, Book_List.user_id FROM Book INNER JOIN Book_List ON Book.book_id=Book_List.book_id WHERE (Book.name LIKE %s OR "
                  "Book.author LIKE %s OR Book.isbn LIKE %s OR Book.prescribed_course LIKE %s) "
-                 "AND Book.price <= %s AND Book.transaction_type = %s AND Book.book_id != %s")
+                 "AND Book.price >= %s AND Book.transaction_type = %s AND Book.book_id != %s")
         if rv[1]:
             name = '%'+rv[1]+'%'
         if rv[2]:
