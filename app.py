@@ -421,6 +421,69 @@ def add_wishlist():
         'message': 'Wishlist book created',
         }), status.HTTP_201_CREATED
 
+# def get_matches(book_id, type):
+# @app.route('/api/wishlist/<book_id>')
+def get_matches(book_id):
+    c, con = connection()
+    query = ("SELECT * FROM Book_List WHERE book_id = %s")
+    c.execute(query, [book_id])
+    ret = c.fetchone()
+    seller_id = ret[1]
+
+    query = ("SELECT * FROM Book WHERE book_id = %s")
+    c.execute(query, [book_id])
+    rv = c.fetchone()
+
+    trans_type = 'buy'
+    if rv:
+        name = None
+        author = None
+        # isbn = None
+        course = None
+        query = ("SELECT Book.*, Book_List.user_id FROM Book INNER JOIN Book_List ON Book.book_id=Book_List.book_id WHERE (Book.name LIKE %s OR "
+                 "Book.author LIKE %s OR Book.isbn LIKE %s OR Book.prescribed_course LIKE %s) "
+                 "AND Book.price <= %s AND Book.transaction_type = %s AND Book.book_id != %s")
+        if rv[1]:
+            name = '%'+rv[1]+'%'
+        if rv[2]:
+            author = '%'+rv[2]+'%' 
+        # if rv[3]:
+        #     isbn = '%'+rv[3]+'%'
+        if rv[4]:
+            course = '%'+rv[4]+'%'
+        values = (name, author, rv[3], course, rv[9], trans_type, rv[0])
+        c.execute(query, values)
+        m = c.fetchall()
+        c.close()
+        con.close()
+
+        matches = []
+        for match in m:
+            matchDict = {
+                'book_id': match[0],
+                'name': match[1],
+                'author': match[2],
+                'isbn': match[3],
+                'course': match[4],
+                'edition': match[5],
+                'condition': match[6],
+                'trans_type': match[7],
+                'status': match[8],
+                # Decimal is not JSON serializable error otherwise (below 2)
+                'price': float(match[9]),
+                'margin': float(match[10]),
+                'description': match[11],
+                'buyer_id': match[12],
+            }
+            matches.append(matchDict)
+            send_match_alert(match[12], seller_id, book_id)
+        return jsonify(matches)
+
+    c.close()
+    con.close()
+    return not_found()
+
+
 @app.route('/api/books/create', methods=['POST'])
 def add_book():
     # if not session.get('logged_in'):
@@ -483,6 +546,9 @@ def add_book():
     con.commit()
     c.close()
     con.close()
+
+    get_matches(book_id)
+
     return jsonify({
         'status': 201,
         'message': 'Book created',
@@ -583,10 +649,10 @@ def get_book(bookid):
     query = ("SELECT * FROM Book WHERE book_id = %s")
     c.execute(query, [bookid])
     rv = c.fetchone()
+    c.close()
+    con.close()
 
     if rv:
-        c.close()
-        con.close()
         return jsonify({
             'book_id': rv[0],
             'name': rv[1],
@@ -603,8 +669,6 @@ def get_book(bookid):
             'description': rv[11],
             }), status.HTTP_200_OK
     else:
-        c.close()
-        con.close()
         return not_found()
 
 
@@ -959,17 +1023,56 @@ def response_book(notification_id):
     else:
         return not_found
 
+@app.route('/api/notifications/seen/<notification_id>', methods=['POST'])
+def notification_seen(notification_id):
+    c, con = connection()
+    query = ("UPDATE Notification SET seen = 1 WHERE Id = %s")
+    c.execute(query, [notification_id])
+    con.commit()
+    c.close()
+    con.close()
+    return jsonify({'status': 200,
+                    'message': "Notification marked as seen",
+                    })
+
+# @app.route('/api/match/notifications/<user_id>')
+# def get_match_notifications(user_id):
+
+def send_match_alert(buyer_id, seller_id, book_id):
+    c, con = connection()
+    query = ("INSERT INTO Transaction (Buying_User_Id, Selling_User_Id, "
+             "Book_Id, Status) "
+             "VALUES (%s, %s, %s, %s)")
+    values = (buyer_id, seller_id, book_id, 'pending')
+    c.execute(query, values)
+
+    transaction_id = c.lastrowid
+    query = ("INSERT INTO Notification "
+             "(User_Id, Transaction_Id, Type) "
+             "VALUES (%s, %s, 'alert')")
+    values = (buyer_id, transaction_id)
+    c.execute(query, values)
+    con.commit()
+    c.close()
+    con.close()
 
 @app.route('/api/request/notifications/<user_id>')
 def get_notifications(user_id):
     c, con = connection()
+    # query = ("SELECT Transaction.*, Notification.* "
+    #          "FROM Transaction "
+    #          "INNER JOIN Notification "
+    #          "ON Transaction.Selling_User_Id=Notification.User_Id "
+    #          "WHERE Transaction.Status='pending' AND "
+    #          "Transaction.Selling_User_Id = %s")
     query = ("SELECT Transaction.*, Notification.* "
              "FROM Transaction "
              "INNER JOIN Notification "
              "ON Transaction.Selling_User_Id=Notification.User_Id "
-             "WHERE Transaction.Status='pending' AND "
-             "Transaction.Selling_User_Id = %s")
-    c.execute(query, [user_id])
+             "WHERE (Transaction.Buying_User_Id = %s OR "
+             "Transaction.Selling_User_Id = %s) AND Notification.Seen = 0")
+    values = (user_id, user_id)
+    c.execute(query, values)
     rv = c.fetchall()
 
     notif = []
