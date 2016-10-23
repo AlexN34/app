@@ -174,14 +174,6 @@ def get_user(userid):
 def update_user(userid):
     message = ''
 
-    # # Check user is logged in
-    # if not session.get('logged_in'):
-    #     return not_logged_in()
-
-    # # Check logged in user is the one being updated
-    # if str(userid) != str(session['user_id']):
-    #     return not_auth()
-
     # Check user is logged in (has a valid token)
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
