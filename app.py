@@ -868,7 +868,7 @@ def request_book(book_id):
         return not_found()
 
 
-@app.route('/api/response/<notification_id>', methods=['GET'])
+@app.route('/api/response/<notification_id>', methods=['POST'])
 def response_book(notification_id):
     # Skip request is the same as the logged in user from the token (?)
     # Action contains accept/reject option
