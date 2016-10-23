@@ -47,34 +47,7 @@ def connection():
 
 @app.route("/")
 def index():
-    todo = """Current API:
-    /login - show login screen
-    /logout - works
-    /register - show registration form
-
-    /api/user/login -> logs user in; basic function works, needs hashing
-    /api/user/register -> Adds a new user to the database
-
-    /api/user/<userid> -> Retrieves user information
-    /api/user/list -> Lists all the users
-
-    /api/books/create -> Adds a new book to the database
-    /api/books/<bookid> -> Retrieves book information
-    /api/books/list -> Lists all the books
-    /api/books/search/<query> -> returns all results that any field matches
-
-    /api/listings -> Shows which user owns which book"""
-
-    if session.get('logged_in'):
-        userid = session['user_id']
-    else:
-        userid = 0
-
-        # Random login details while testing front-end
-        session['logged_in'] = True
-        session['user_id'] = 33
-        session['email'] = "bread@gmail.com"
-    return render_template('index.html', todo=todo, userid=userid)
+    return render_template('index.html')
 
 
 # User login/authentication/session management.
@@ -102,12 +75,6 @@ def login():
                 error = "Invalid password"
             else:
                 token = generate_auth_token(rv[0])
-                # session['email'] = request.form['email']
-                # session['logged_in'] = True
-                # session['user_id'] = rv[0]
-                # flash("Success: you are now logged in")
-                # Back to list page on success with flash message
-                # return redirect(url_for('index'))
                 return jsonify({
                     'status': 200,
                     'message': 'Login successful',
@@ -119,8 +86,6 @@ def login():
             error = "Invalid email"
 
     return login_error(error)
-    # Point this to home page with errors if they occurred
-    # return render_template('index.html', error=error)
 
 
 @app.route('/logout')
@@ -130,7 +95,6 @@ def logout():
     session.pop('logged_in', False)
     session.pop('user_id', None)
     flash('You were logged out')
-    # return redirect(url_for('index'))
     return jsonify({
         'status': 200,
         'message': 'User logout successful',
@@ -161,7 +125,6 @@ def register():
         error = "Email already exists"
         c.close()
         con.close()
-        # return redirect(url_for('index')), status.HTTP_400_BAD_REQUEST
         return registration_error(error)
 
     # Create the user return success status
@@ -177,12 +140,6 @@ def register():
         c.close()
         con.close()
 
-        flash("Just registered new user. Details are:")
-        flash(request.form['email'])
-        flash(request.form['password'])
-        flash(request.form['university'])
-        flash(request.form['location'])
-        # return redirect(url_for('index')), status.HTTP_201_CREATED
         return jsonify({
             'status': 201,
             'message': 'User registration successful',
