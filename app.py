@@ -511,7 +511,7 @@ def delete_book(bookid):
         if (str(rv[1]) != str(verify_auth_token(request.form['token']))):
             return not_auth()
 
-        # Can probably merge these into one query 
+        # Can probably merge these into one query
         query = ("DELETE FROM Book WHERE book_id = %s")
         c.execute(query, [bookid])
         query = ("DELETE FROM Book_List WHERE book_id = %s")
@@ -827,7 +827,7 @@ def response_book(notification_id):
     # Skip request is the same as the logged in user from the token (?)
     # Action contains accept/reject option
     # action = request.form['action']
-    action = 'accept'
+    action = request.form['action']
     c, con = connection()
     # Check notification type first: If request, then send response
     # If Match, then return contact details inside json object?
@@ -846,6 +846,7 @@ def response_book(notification_id):
                      "WHERE Notification.Id= %s")
             c.execute(query, notification_id)
             match = c.fetchone()
+            # Remove Book/notification??
             return jsonify({
                 'status': 200,
                 'message': match[0],
@@ -854,13 +855,13 @@ def response_book(notification_id):
         if rv[4] == 'request':
             # Join Notification.Transaction_ID and Transaction ID's and bring up
             # Book_Id, ID, Buying_User ID
-            query = ("SELECT Transaction.Book_Id Transaction.Id "
+            query = ("SELECT Transaction.Book_Id,  Transaction.Id, "
                      "Transaction.Buying_User_Id "
                      "FROM Notification "
                      "INNER JOIN Transaction "
                      "ON Notification.Transaction_Id=Transaction.Id "
                      "WHERE Transaction.Status='pending' AND "
-                     "Notification.Id= %s")
+                     "Notification.Id=%s")
             c.execute(query, [notification_id])
             rv1 = c.fetchone()
             if rv1:
@@ -868,7 +869,7 @@ def response_book(notification_id):
                 c.execute(query, [rv1[0]])
                 rv2 = c.fetchone()
                 if rv2:  # Book exists
-                        query = ("UPDATE Transaction SET Status = %s WHERE "
+                        query = ("UPDATE Transaction SET Status = '%s' WHERE "
                                  " Id = %s")
                         values = (action, rv1[1])
                         c.execute(query, values)
@@ -877,18 +878,18 @@ def response_book(notification_id):
                             # otherwise
                             response_type = 'match'
                             response_status = 'sold'
-                        else:
+                        else:  # Only other option is reject
                             response_type = 'response'
                             response_status = 'available'
 
                 else:
                     return not_found()
                 # Update book status
-                query = ("UPDATE Book SET status = %s WHERE "
-                         " Id = %s")
+                query = ("UPDATE Book SET status = '%s' WHERE "
+                         " book_id = %s")
                 values = (response_status, rv1[0])
                 c.execute(query, values)
-                query = ("UPDATE Transaction SET Seen = %s WHERE "
+                query = ("UPDATE Notification SET Seen = %d WHERE "
                          " Id = %s")
                 values = (1, rv1[1])  # Set seen to True
                 c.execute(query, values)
@@ -911,7 +912,6 @@ def response_book(notification_id):
                 return not_found()
     else:
         return not_found
-
 
 @app.route('/api/request/notifications/<user_id>')
 def get_notifications(user_id):
