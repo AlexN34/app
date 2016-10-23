@@ -784,11 +784,10 @@ def request_book(book_id):
 
 @app.route('/api/response/<notification_id>')
 def response_book(notification_id):
-    if not verify_auth_token(request.form['token']):
-        return not_logged_in()
     # Skip request is the same as the logged in user from the token (?)
     # Action contains accept/reject option
-    action = request.form['action']
+    # action = request.form['action']
+    action = 'accept'
     c, con = connection()
     # Check notification type first: If request, then send response
     # If Match, then return contact details inside json object?
@@ -804,7 +803,7 @@ def response_book(notification_id):
                      "ON Notification.Transaction_Id=Transaction.Id "
                      "INNER JOIN User "
                      "ON Transaction.Selling_User_Id=User.User_Id"
-                     "Notification.Id= %s")
+                     "WHERE Notification.Id= %s")
             c.execute(query, notification_id)
             match = c.fetchone()
             return jsonify({
