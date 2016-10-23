@@ -375,6 +375,52 @@ def get_book_image(bookid):
     else:
         return not_found()
 
+@app.route('/api/user/wishlist/create', methods=['POST'])
+def add_wishlist():
+    # Check user is logged in (has a valid token)
+    if not verify_auth_token(request.form['token']):
+        return not_logged_in()
+
+    userid = verify_auth_token(request.form['token'])
+
+    name = request.form['name']
+    author = request.form['author']
+    prescribed_course = request.form.get('prescribed_course', 'NULL')
+    isbn = request.form.get('isbn', None)
+    edition = request.form.get('edition', None)
+    price = request.form.get('price', 999) # Max price
+
+    # Unused parameters
+    transaction_type = 'buy' # Should be 'buy'
+    condition = 1
+    description = request.form.get('description', None)
+
+    c, con = connection()
+    query = ("INSERT INTO Book "
+             "(name, author, isbn, prescribed_course, edition, `condition`, "
+             "transaction_type, price, description) "
+             "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
+    values = (name, author, isbn, prescribed_course, edition, condition,
+              transaction_type, price, description)
+    c.execute(query, values)
+
+    # Mark book listing as belonging to user
+    book_id = c.lastrowid  # Get the id of the newly inserted book
+
+    query = ("INSERT INTO Book_List (user_id, book_id, `date`)"
+             "VALUES (%s, %s, %s)")
+    values = (userid, book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
+
+    c.execute(query, values)
+
+    con.commit()
+    c.close()
+    con.close()
+    return jsonify({
+        'status': 201,
+        'message': 'Wishlist book created',
+        }), status.HTTP_201_CREATED
+
 @app.route('/api/books/create', methods=['POST'])
 def add_book():
     # if not session.get('logged_in'):
