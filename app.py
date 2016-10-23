@@ -872,8 +872,8 @@ def request_book(book_id):
 def response_book(notification_id):
     # Skip request is the same as the logged in user from the token (?)
     # Action contains accept/reject option
-    # action = request.form['action']
-    action = 'accept'
+    action = request.form['action']
+    # action = 'accept'
     c, con = connection()
     # Check notification type first: If request, then send response
     # If Match, then return contact details inside json object?
