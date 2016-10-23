@@ -24,6 +24,8 @@ app.config['MYSQL_DB'] = 'bookswapp'
 app.config.from_object(__name__)  # config from above variables in file
 # mysql = MySQL(app)  # attaches mysql object to the app?
 
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+
 # set the secret key
 app.secret_key = os.urandom(24)
 
@@ -148,6 +150,7 @@ def register():
     password = request.form['password']
     university = request.form.get('university', None)
     location = request.form.get('location', None)
+    mobile = request.form['mobile']
 
     c, con = connection()
     c.execute("SELECT * FROM User WHERE email = '%s'" % (email))
@@ -165,9 +168,9 @@ def register():
     else:
         # This format supposedly prevents SQL injections
         query = ("INSERT INTO User "
-                 "(email, password, university, location) "
-                 "VALUES (%s, %s, %s, %s)")
-        values = (email, password, university, location)
+                 "(email, password, university, location, mobile) "
+                 "VALUES (%s, %s, %s, %s, %s)")
+        values = (email, password, university, location, mobile)
         c.execute(query, values)
 
         con.commit()
@@ -202,6 +205,7 @@ def get_user(userid):
             'password': rv[2],
             'university': rv[3],
             'location': rv[4],
+            'mobile': rv[5],
             })
 
     return not_found()
@@ -260,6 +264,12 @@ def update_user(userid):
         values = (request.form['location'], userid)
         c.execute(query, values)
         message += "Location updated\n"
+
+    if ('mobile' in request.form):
+        query = ("UPDATE User SET mobile = %s WHERE user_id = %s")
+        values = (request.form['mobile'], userid)
+        c.execute(query, values)
+        message += "Mobile updated\n"
 
     con.commit()
     c.close()
@@ -336,7 +346,8 @@ def get_userlist():
             'email': user[1],
             'password': user[2],
             'university': user[3],
-            'location': user[4]
+            'location': user[4],
+            'mobile': user[5],
         }
         userList.append(userDict)
 
@@ -345,6 +356,24 @@ def get_userlist():
         finalState = status.HTTP_200_OK
     return jsonify(userList), finalState
 
+# http://flask.pocoo.org/docs/0.11/patterns/fileuploads/
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+@app.route('/api/books/image/<bookid>')
+def get_book_image(bookid):
+    c, con = connection()
+    query = ("SELECT * FROM Book_Image WHERE book_id = %s")
+    c.execute(query, [bookid])
+    rv = c.fetchone()
+    if rv:
+        return jsonify({
+            'book_id': bookid,
+            'image': rv[2],
+            })
+    else:
+        return not_found()
 
 @app.route('/api/books/create', methods=['POST'])
 def add_book():
@@ -386,6 +415,19 @@ def add_book():
 
     # Mark book listing as belonging to user
     book_id = c.lastrowid  # Get the id of the newly inserted book
+
+    print ("Checking image")
+    # Upload image if exists
+    if ('image' in request.files):
+        print ("Image attached")
+        image = request.files['image']
+        if (image.filename != '' and allowed_file(file.filename)):
+            print ("Image attached1")
+            image_data = image.read()
+            query = ("INSERT INTO Book_Image (book_id, image) VALUES (%s, %s)")
+            values = (image_data, book_id)
+            c.execute(query, values)
+
     query = ("INSERT INTO Book_List (user_id, book_id, `date`)"
              "VALUES (%s, %s, %s)")
     values = (userid, book_id, time.strftime('%Y-%m-%d %H:%M:%S'))
