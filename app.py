@@ -455,10 +455,6 @@ def update_book(bookid):
 # Using GET method for now for easier testing
 @app.route('/api/books/delete/<bookid>', methods=['POST'])
 def delete_book(bookid):
-    # Check user is logged in, and that they own the associated book listing
-    # if not session.get('logged_in'):
-    #     return not_logged_in()
-
     # Check user is logged in (has a valid token)
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
@@ -468,18 +464,20 @@ def delete_book(bookid):
     c.execute(query, [bookid])
     rv = c.fetchone()
 
-    # if (rv[0] != session['user_id']):
-    #     return not_auth()
-
     if rv:
         # Check the user being updated is same as logged in user from the token
         if (str(rv[1]) != str(verify_auth_token(request.form['token']))):
             return not_auth()
 
+        # Can probably merge these into one query 
         query = ("DELETE FROM Book WHERE book_id = %s")
         c.execute(query, [bookid])
         query = ("DELETE FROM Book_List WHERE book_id = %s")
         c.execute(query, [bookid])
+        query = ("DELETE Transaction, Notification FROM Transaction INNER JOIN Notification "
+                 "ON Notification.Transaction_Id=Transaction.Id WHERE Transaction.Book_Id = %s")
+        c.execute(query, [bookid])
+
         con.commit()
         c.close()
         con.close()
@@ -782,7 +780,7 @@ def request_book(book_id):
         return not_found()
 
 
-@app.route('/api/response/<notification_id>')
+@app.route('/api/response/<notification_id>', methods=['POST'])
 def response_book(notification_id):
     if not verify_auth_token(request.form['token']):
         return not_logged_in()
@@ -936,7 +934,7 @@ def get_wishlist(user_id):
     return jsonify(wishlist)
 
 
-@app.route('/api/user/transactions/<user_id>')
+@app.route('/api/user/transactions/<user_id>', methods=['POST'])
 def get_transactions(user_id):
     # Check user is logged in (has a valid token)
     if not verify_auth_token(request.form['token']):
@@ -947,9 +945,14 @@ def get_transactions(user_id):
         return not_auth()
 
     c, con = connection()
-    query = ("SELECT * from Transaction "
-             "WHERE Selling_User_Id = %s OR Buying_User_Id = %s")
-    values = (user_id, user_id)
+    query = ("(SELECT T1.*, User.email FROM (SELECT Transaction.*, Book.name FROM Transaction INNER JOIN Book "
+             "ON Transaction.Book_Id=Book.book_id WHERE Transaction.Selling_User_Id = %s OR Transaction.Buying_User_Id = %s) "
+             "AS T1 INNER JOIN User ON T1.Selling_User_Id=User.user_id WHERE T1.Selling_User_Id != %s) UNION "
+             "(SELECT T2.*, User.email FROM (SELECT Transaction.*, Book.name FROM Transaction INNER JOIN Book "
+             "ON Transaction.Book_Id=Book.book_id WHERE Transaction.Selling_User_Id = %s OR Transaction.Buying_User_Id = %s) "
+             "AS T2 INNER JOIN User ON T2.Buying_User_Id=User.user_id "
+             "WHERE T2.Buying_User_Id != %s)")
+    values = (user_id, user_id, user_id, user_id, user_id, user_id)
     c.execute(query, values)
     rv = c.fetchall()
     c.close()
@@ -962,6 +965,8 @@ def get_transactions(user_id):
             'buyer_id': item[2],
             'status': item[3],
             'book_id': item[4],
+            'book_name': item[5],
+            'other_email': item[6],
         }
         transactions.append(record)
 
