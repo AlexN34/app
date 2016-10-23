@@ -868,30 +868,32 @@ def request_book(book_id):
         return not_found()
 
 
-@app.route('/api/response/<notification_id>', methods=['POST'])
+@app.route('/api/response/<notification_id>', methods=['GET'])
 def response_book(notification_id):
     # Skip request is the same as the logged in user from the token (?)
     # Action contains accept/reject option
     # action = request.form['action']
-    action = request.form['action']
+    action = 'accept'
     c, con = connection()
     # Check notification type first: If request, then send response
     # If Match, then return contact details inside json object?
     query = ("SELECT * FROM Notification WHERE Id = %s")
-    c.execute(query, notification_id)
+    c.execute(query, [notification_id])
     rv = c.fetchone()
     if rv:
         # If Match, get mobile from user and return number in message
         if rv[4] == 'match':
+            print(notification_id)
             query = ("SELECT User.mobile "
                      "FROM Notification "
                      "INNER JOIN Transaction "
                      "ON Notification.Transaction_Id=Transaction.Id "
                      "INNER JOIN User "
-                     "ON Transaction.Selling_User_Id=User.User_Id"
+                     "ON Transaction.Selling_User_Id=User.User_Id "
                      "WHERE Notification.Id= %s")
-            c.execute(query, notification_id)
+            c.execute(query, [notification_id])
             match = c.fetchone()
+            print(match)
             # Remove Book/notification??
             return jsonify({
                 'status': 200,
@@ -915,8 +917,8 @@ def response_book(notification_id):
                 c.execute(query, [rv1[0]])
                 rv2 = c.fetchone()
                 if rv2:  # Book exists
-                        query = ("UPDATE Transaction SET Status = '%s' WHERE "
-                                 " Id = %s")
+                        query = ("UPDATE Transaction SET Status = %s WHERE "
+                                 "Id = %s")
                         values = (action, rv1[1])
                         c.execute(query, values)
                         if action == 'accept':
@@ -931,12 +933,12 @@ def response_book(notification_id):
                 else:
                     return not_found()
                 # Update book status
-                query = ("UPDATE Book SET status = '%s' WHERE "
-                         " book_id = %s")
+                query = ("UPDATE Book SET status = %s WHERE "
+                         "book_id = %s")
                 values = (response_status, rv1[0])
                 c.execute(query, values)
-                query = ("UPDATE Notification SET Seen = %d WHERE "
-                         " Id = %s")
+                query = ("UPDATE Notification SET Seen = %s WHERE "
+                         "Id = %s")
                 values = (1, rv1[1])  # Set seen to True
                 c.execute(query, values)
 
