@@ -356,10 +356,12 @@ def get_userlist():
         finalState = status.HTTP_200_OK
     return jsonify(userList), finalState
 
+
 # http://flask.pocoo.org/docs/0.11/patterns/fileuploads/
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
 
 @app.route('/api/books/image/<bookid>')
 def get_book_image(bookid):
@@ -375,6 +377,7 @@ def get_book_image(bookid):
     else:
         return not_found()
 
+
 @app.route('/api/user/wishlist/create', methods=['POST'])
 def add_wishlist():
     # Check user is logged in (has a valid token)
@@ -388,10 +391,10 @@ def add_wishlist():
     prescribed_course = request.form.get('prescribed_course', 'NULL')
     isbn = request.form.get('isbn', None)
     edition = request.form.get('edition', None)
-    price = request.form.get('price', 999) # Max price
+    price = request.form.get('price', 999)  # Max price
 
     # Unused parameters
-    transaction_type = 'buy' # Should be 'buy'
+    transaction_type = 'buy'  # Should be 'buy'
     condition = 1
     description = request.form.get('description', None)
 
@@ -420,6 +423,7 @@ def add_wishlist():
         'status': 201,
         'message': 'Wishlist book created',
         }), status.HTTP_201_CREATED
+
 
 # def get_matches(book_id, type):
 # @app.route('/api/wishlist/<book_id>')
@@ -525,13 +529,13 @@ def add_book():
     # Mark book listing as belonging to user
     book_id = c.lastrowid  # Get the id of the newly inserted book
 
-    print ("Checking image")
+    print("Checking image")
     # Upload image if exists
     if ('image' in request.files):
-        print ("Image attached")
+        print("Image attached")
         image = request.files['image']
         if (image.filename != '' and allowed_file(file.filename)):
-            print ("Image attached1")
+            print("Image attached1")
             image_data = image.read()
             query = ("INSERT INTO Book_Image (book_id, image) VALUES (%s, %s)")
             values = (image_data, book_id)
@@ -623,13 +627,15 @@ def delete_book(bookid):
         if (str(rv[1]) != str(verify_auth_token(request.form['token']))):
             return not_auth()
 
-        # Can probably merge these into one query 
+        # Can probably merge these into one query
         query = ("DELETE FROM Book WHERE book_id = %s")
         c.execute(query, [bookid])
         query = ("DELETE FROM Book_List WHERE book_id = %s")
         c.execute(query, [bookid])
-        query = ("DELETE Transaction, Notification FROM Transaction INNER JOIN Notification "
-                 "ON Notification.Transaction_Id=Transaction.Id WHERE Transaction.Book_Id = %s")
+        query = ("DELETE Transaction, Notification FROM Transaction "
+                 "INNER JOIN Notification "
+                 "ON Notification.Transaction_Id=Transaction.Id "
+                 "WHERE Transaction.Book_Id = %s")
         c.execute(query, [bookid])
 
         con.commit()
@@ -934,16 +940,15 @@ def request_book(book_id):
 
 @app.route('/api/response/<notification_id>', methods=['POST'])
 def response_book(notification_id):
-    if not verify_auth_token(request.form['token']):
-        return not_logged_in()
     # Skip request is the same as the logged in user from the token (?)
     # Action contains accept/reject option
     action = request.form['action']
+    # action = 'accept'
     c, con = connection()
     # Check notification type first: If request, then send response
     # If Match, then return contact details inside json object?
     query = ("SELECT * FROM Notification WHERE Id = %s")
-    c.execute(query, notification_id)
+    c.execute(query, [notification_id])
     rv = c.fetchone()
     if rv:
         # If Match, get mobile from user and return number in message
@@ -953,10 +958,11 @@ def response_book(notification_id):
                      "INNER JOIN Transaction "
                      "ON Notification.Transaction_Id=Transaction.Id "
                      "INNER JOIN User "
-                     "ON Transaction.Selling_User_Id=User.User_Id"
-                     "Notification.Id= %s")
-            c.execute(query, notification_id)
+                     "ON Transaction.Selling_User_Id=User.User_Id "
+                     "WHERE Notification.Id= %s")
+            c.execute(query, [notification_id])
             match = c.fetchone()
+            # Remove Book/notification??
             return jsonify({
                 'status': 200,
                 'message': match[0],
@@ -965,13 +971,13 @@ def response_book(notification_id):
         if rv[4] == 'request':
             # Join Notification.Transaction_ID and Transaction ID's and bring up
             # Book_Id, ID, Buying_User ID
-            query = ("SELECT Transaction.Book_Id Transaction.Id "
+            query = ("SELECT Transaction.Book_Id,  Transaction.Id, "
                      "Transaction.Buying_User_Id "
                      "FROM Notification "
                      "INNER JOIN Transaction "
                      "ON Notification.Transaction_Id=Transaction.Id "
                      "WHERE Transaction.Status='pending' AND "
-                     "Notification.Id= %s")
+                     "Notification.Id=%s")
             c.execute(query, [notification_id])
             rv1 = c.fetchone()
             if rv1:
@@ -980,7 +986,7 @@ def response_book(notification_id):
                 rv2 = c.fetchone()
                 if rv2:  # Book exists
                         query = ("UPDATE Transaction SET Status = %s WHERE "
-                                 " Id = %s")
+                                 "Id = %s")
                         values = (action, rv1[1])
                         c.execute(query, values)
                         if action == 'accept':
@@ -988,7 +994,7 @@ def response_book(notification_id):
                             # otherwise
                             response_type = 'match'
                             response_status = 'sold'
-                        else:
+                        else:  # Only other option is reject
                             response_type = 'response'
                             response_status = 'available'
 
@@ -996,11 +1002,11 @@ def response_book(notification_id):
                     return not_found()
                 # Update book status
                 query = ("UPDATE Book SET status = %s WHERE "
-                         " Id = %s")
+                         "book_id = %s")
                 values = (response_status, rv1[0])
                 c.execute(query, values)
-                query = ("UPDATE Transaction SET Seen = %s WHERE "
-                         " Id = %s")
+                query = ("UPDATE Notification SET Seen = %s WHERE "
+                         "Id = %s")
                 values = (1, rv1[1])  # Set seen to True
                 c.execute(query, values)
 
@@ -1136,11 +1142,18 @@ def get_transactions(user_id):
         return not_auth()
 
     c, con = connection()
-    query = ("(SELECT T1.*, User.email FROM (SELECT Transaction.*, Book.name FROM Transaction INNER JOIN Book "
-             "ON Transaction.Book_Id=Book.book_id WHERE Transaction.Selling_User_Id = %s OR Transaction.Buying_User_Id = %s) "
-             "AS T1 INNER JOIN User ON T1.Selling_User_Id=User.user_id WHERE T1.Selling_User_Id != %s) UNION "
-             "(SELECT T2.*, User.email FROM (SELECT Transaction.*, Book.name FROM Transaction INNER JOIN Book "
-             "ON Transaction.Book_Id=Book.book_id WHERE Transaction.Selling_User_Id = %s OR Transaction.Buying_User_Id = %s) "
+    query = ("(SELECT T1.*, User.email FROM "
+             "(SELECT Transaction.*, Book.name FROM Transaction "
+             "INNER JOIN Book ON Transaction.Book_Id=Book.book_id "
+             "WHERE Transaction.Selling_User_Id = %s OR "
+             "Transaction.Buying_User_Id = %s) "
+             "AS T1 INNER JOIN User ON T1.Selling_User_Id=User.user_id "
+             "WHERE T1.Selling_User_Id != %s) UNION "
+             "(SELECT T2.*, User.email FROM "
+             "(SELECT Transaction.*, Book.name FROM Transaction "
+             "INNER JOIN Book ON Transaction.Book_Id=Book.book_id "
+             "WHERE Transaction.Selling_User_Id = %s OR "
+             "Transaction.Buying_User_Id = %s) "
              "AS T2 INNER JOIN User ON T2.Buying_User_Id=User.user_id "
              "WHERE T2.Buying_User_Id != %s)")
     values = (user_id, user_id, user_id, user_id, user_id, user_id)
