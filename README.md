@@ -1,6 +1,7 @@
 # Bookswapp
-Textbook trading marketplace web app for COMP4920
-
+Textbook trading marketplace web app backend for COMP4920
+## Front-end
+AngularJS front-end project is hosted at: https://github.com/mlux9/app-front
 # API details
 https://docs.google.com/document/d/1W6OSjiO2Ia2rvqzSiSrmi2W0Yf7MdHPWsrbcks579mw/mobilebasic
 
